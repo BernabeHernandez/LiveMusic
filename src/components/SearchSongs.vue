@@ -2,6 +2,8 @@
 import { ref, onMounted, onUnmounted } from 'vue'
 import { usePlayerStore } from '../stores/player'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
 const query = ref('')
 const results = ref([])
 const playerStore = usePlayerStore()
@@ -19,7 +21,7 @@ const search = async (append = false) => {
   errorMessage.value = '';
   
   try {
-    const url = `http://localhost:3000/api/search?q=${encodeURIComponent(query.value)}&maxResults=${maxResults.value}`;
+    const url = `${API_URL}/api/search?q=${encodeURIComponent(query.value)}&maxResults=${maxResults.value}`;
     
     console.log("Buscando:", query.value);
 
@@ -38,14 +40,14 @@ const search = async (append = false) => {
       results.value = Array.isArray(items) ? items : [];
     }
     
-    console.log(" Resultados encontrados:", results.value.length);
+    console.log("✅ Resultados encontrados:", results.value.length);
     
     if (results.value.length === 0) {
       errorMessage.value = 'No se encontraron resultados';
     }
     
   } catch (error) {
-    console.error(" Error:", error);
+    console.error("❌ Error:", error);
     errorMessage.value = error.message;
   }
   
@@ -99,12 +101,12 @@ onUnmounted(() => {
     </div>
 
     <div v-if="isLoading && results.length === 0" class="loading">
-       Buscando resultados...
+      🔍 Buscando resultados...
       <p class="loading-hint">Esto puede tardar unos segundos</p>
     </div>
 
     <div v-if="errorMessage" class="error-message">
-       {{ errorMessage }}
+      ❌ {{ errorMessage }}
       <p>Intenta buscar otra cosa o espera unos minutos</p>
     </div>
 
@@ -123,7 +125,7 @@ onUnmounted(() => {
         />
         <div class="info">
           <p class="title">{{ item.title }}</p>
-          <p class="artist">{{ item.uploaderName }}</p>
+          <p class="artist">{{ item.uploaderName || item.artist }}</p>
           <p class="duration" v-if="item.duration">
             {{ Math.floor(item.duration / 60) }}:{{ String(item.duration % 60).padStart(2, '0') }}
           </p>
@@ -136,7 +138,7 @@ onUnmounted(() => {
     </div>
 
     <div v-if="!isLoading && results.length === 0 && query && !errorMessage" class="no-results">
-       "{{ query }}"
+      No se encontraron resultados para "{{ query }}"
     </div>
   </div>
 </template>

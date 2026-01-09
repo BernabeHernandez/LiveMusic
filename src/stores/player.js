@@ -1,5 +1,8 @@
 import { defineStore } from 'pinia';
 
+// ✅ Variable de entorno para API URL
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+
 export const usePlayerStore = defineStore('player', {
   state: () => ({
     currentTrack: null,
@@ -56,7 +59,8 @@ export const usePlayerStore = defineStore('player', {
       }
 
       try {
-        const response = await fetch(`http://localhost:3000/api/audio/${videoId}`);
+        // ✅ Usar API_URL en lugar de localhost
+        const response = await fetch(`${API_URL}/api/audio/${videoId}`);
         const data = await response.json();
 
         if (data.audioUrl) {
@@ -66,7 +70,7 @@ export const usePlayerStore = defineStore('player', {
           this.duration = data.duration || 0;
 
           // Actualizar metadata real
-          const infoRes = await fetch(`http://localhost:3000/api/video-info/${videoId}`);
+          const infoRes = await fetch(`${API_URL}/api/video-info/${videoId}`);
           if (infoRes.ok) {
             const info = await infoRes.json();
             this.currentTrack.title = info.title;
