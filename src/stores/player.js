@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia';
 
-// ✅ Variable de entorno para API URL
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export const usePlayerStore = defineStore('player', {
@@ -26,16 +25,29 @@ export const usePlayerStore = defineStore('player', {
 
         this.audio.addEventListener('timeupdate', () => {
           this.currentTime = this.audio.currentTime;
-          this.duration = this.audio.duration || 0;
+          
+          // ✅ CORRECCIÓN: Solo usar audio.duration cuando esté disponible y sea válido
+          if (this.audio.duration && !isNaN(this.audio.duration) && isFinite(this.audio.duration)) {
+            this.duration = this.audio.duration;
+          }
+          
           this.progress = this.duration > 0 ? (this.currentTime / this.duration) * 100 : 0;
+        });
+
+        // ✅ AGREGADO: Escuchar evento loadedmetadata para obtener duración real
+        this.audio.addEventListener('loadedmetadata', () => {
+          if (this.audio.duration && !isNaN(this.audio.duration) && isFinite(this.audio.duration)) {
+            this.duration = this.audio.duration;
+            console.log('✅ Duración real del audio:', this.duration, 'segundos');
+          }
         });
 
         this.audio.addEventListener('ended', () => {
           this.nextTrack();
         });
 
-        this.audio.addEventListener('error', () => {
-          console.error('Error al reproducir audio');
+        this.audio.addEventListener('error', (e) => {
+          console.error('Error al reproducir audio:', e);
           alert('Error al reproducir esta canción. Puede estar restringida o no disponible.');
         });
       }
@@ -49,7 +61,6 @@ export const usePlayerStore = defineStore('player', {
         videoId
       };
 
-      // Añadir a la cola
       const existingIndex = this.queue.findIndex(t => t.videoId === videoId);
       if (existingIndex === -1) {
         this.queue.push(this.currentTrack);
@@ -59,15 +70,23 @@ export const usePlayerStore = defineStore('player', {
       }
 
       try {
-        // ✅ Usar API_URL en lugar de localhost
         const response = await fetch(`${API_URL}/api/audio/${videoId}`);
         const data = await response.json();
 
         if (data.audioUrl) {
+          // ✅ CORRECCIÓN: Resetear duración antes de cargar nueva canción
+          this.duration = 0;
+          this.currentTime = 0;
+          this.progress = 0;
+          
           this.audio.src = data.audioUrl;
-          this.audio.play();
+          
+          // ✅ CORRECCIÓN: Solo usar duración del backend como referencia inicial
+          // La duración real se obtendrá del evento 'loadedmetadata'
+          console.log('📊 Duración del backend:', data.duration, 'segundos');
+          
+          await this.audio.play();
           this.isPlaying = true;
-          this.duration = data.duration || 0;
 
           // Actualizar metadata real
           const infoRes = await fetch(`${API_URL}/api/video-info/${videoId}`);
@@ -98,9 +117,13 @@ export const usePlayerStore = defineStore('player', {
     },
 
     seekTo(percent) {
-      if (!this.audio || isNaN(this.duration)) return;
+      if (!this.audio || isNaN(this.duration) || this.duration === 0) return;
       const time = (percent / 100) * this.duration;
-      this.audio.currentTime = time;
+      
+      // ✅ CORRECCIÓN: Validar que el tiempo no exceda la duración
+      if (time <= this.duration) {
+        this.audio.currentTime = time;
+      }
     },
 
     setVolume(vol) {
