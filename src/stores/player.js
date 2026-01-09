@@ -12,9 +12,11 @@ export const usePlayerStore = defineStore('player', {
     currentIndex: 0,
     currentTime: 0,
     duration: 0,
+    backendDuration: 0, // ✅ NUEVO: guardar duración del backend
     progress: 0,
     isShuffleEnabled: false,
-    playedIndices: []
+    playedIndices: [],
+    durationFixed: false // ✅ NUEVO: flag para saber si ya corregimos
   }),
 
   actions: {
@@ -26,29 +28,70 @@ export const usePlayerStore = defineStore('player', {
         this.audio.addEventListener('timeupdate', () => {
           this.currentTime = this.audio.currentTime;
           
-          // ✅ CORRECCIÓN: Solo usar audio.duration cuando esté disponible y sea válido
-          if (this.audio.duration && !isNaN(this.audio.duration) && isFinite(this.audio.duration)) {
+          // ✅ CORRECCIÓN: Usar backendDuration como fuente de verdad
+          if (this.backendDuration > 0) {
+            this.duration = this.backendDuration;
+          } else if (this.audio.duration && !isNaN(this.audio.duration) && isFinite(this.audio.duration)) {
             this.duration = this.audio.duration;
           }
           
+          // ✅ CORRECCIÓN: Si currentTime excede duration, algo está mal
+          if (this.currentTime > this.duration && this.duration > 0) {
+            console.warn('⚠️ Duración incorrecta detectada. Forzando corrección...');
+            this.duration = this.currentTime;
+          }
+          
           this.progress = this.duration > 0 ? (this.currentTime / this.duration) * 100 : 0;
+          
+          // ✅ NUEVO: Auto-next cuando llegue al final según backend
+          if (this.backendDuration > 0 && this.currentTime >= this.backendDuration - 0.5) {
+            console.log('✅ Canción terminada según duración del backend');
+            this.nextTrack();
+          }
         });
 
-        // ✅ AGREGADO: Escuchar evento loadedmetadata para obtener duración real
         this.audio.addEventListener('loadedmetadata', () => {
+          console.log('📊 loadedmetadata - audio.duration:', this.audio.duration);
+          console.log('📊 backendDuration guardada:', this.backendDuration);
+          
+          // ✅ CORRECCIÓN: Comparar con backend y usar el menor
           if (this.audio.duration && !isNaN(this.audio.duration) && isFinite(this.audio.duration)) {
-            this.duration = this.audio.duration;
-            console.log('✅ Duración real del audio:', this.duration, 'segundos');
+            const audioDuration = this.audio.duration;
+            
+            // Si backend y audio difieren mucho, usar backend
+            if (this.backendDuration > 0) {
+              const diff = Math.abs(audioDuration - this.backendDuration);
+              if (diff > 10) { // Si difieren más de 10 segundos
+                console.warn('⚠️ Duración discrepante:', {
+                  audio: audioDuration,
+                  backend: this.backendDuration,
+                  diferencia: diff
+                });
+                console.log('✅ Usando duración del backend');
+                this.duration = this.backendDuration;
+              } else {
+                this.duration = audioDuration;
+              }
+            } else {
+              this.duration = audioDuration;
+            }
           }
         });
 
         this.audio.addEventListener('ended', () => {
+          console.log('🎵 Evento ended disparado');
           this.nextTrack();
         });
 
         this.audio.addEventListener('error', (e) => {
-          console.error('Error al reproducir audio:', e);
+          console.error('❌ Error al reproducir audio:', e);
           alert('Error al reproducir esta canción. Puede estar restringida o no disponible.');
+        });
+
+        // ✅ NUEVO: Detectar cuando se carga el audio
+        this.audio.addEventListener('canplay', () => {
+          console.log('✅ Audio listo para reproducir');
+          console.log('📊 Duración final:', this.duration);
         });
       }
     },
@@ -70,20 +113,23 @@ export const usePlayerStore = defineStore('player', {
       }
 
       try {
+        console.log('🎵 Cargando canción:', videoId);
+        
         const response = await fetch(`${API_URL}/api/audio/${videoId}`);
         const data = await response.json();
 
         if (data.audioUrl) {
-          // ✅ CORRECCIÓN: Resetear duración antes de cargar nueva canción
+          // ✅ CORRECCIÓN: Resetear TODO
           this.duration = 0;
+          this.backendDuration = data.duration || 0; // ✅ Guardar duración del backend
           this.currentTime = 0;
           this.progress = 0;
+          this.durationFixed = false;
+          
+          console.log('📊 Duración del backend:', this.backendDuration, 'segundos');
+          console.log('📊 URL del audio:', data.audioUrl.substring(0, 50) + '...');
           
           this.audio.src = data.audioUrl;
-          
-          // ✅ CORRECCIÓN: Solo usar duración del backend como referencia inicial
-          // La duración real se obtendrá del evento 'loadedmetadata'
-          console.log('📊 Duración del backend:', data.duration, 'segundos');
           
           await this.audio.play();
           this.isPlaying = true;
@@ -101,7 +147,7 @@ export const usePlayerStore = defineStore('player', {
           this.updateMediaSession();
         }
       } catch (error) {
-        console.error('Error cargando audio:', error);
+        console.error('❌ Error cargando audio:', error);
         alert('No se pudo reproducir la canción');
       }
     },
@@ -118,10 +164,14 @@ export const usePlayerStore = defineStore('player', {
 
     seekTo(percent) {
       if (!this.audio || isNaN(this.duration) || this.duration === 0) return;
-      const time = (percent / 100) * this.duration;
       
-      // ✅ CORRECCIÓN: Validar que el tiempo no exceda la duración
-      if (time <= this.duration) {
+      // ✅ CORRECCIÓN: Usar backendDuration si está disponible
+      const maxDuration = this.backendDuration > 0 ? this.backendDuration : this.duration;
+      const time = (percent / 100) * maxDuration;
+      
+      console.log('⏭️ Seeking a:', time, 'de', maxDuration);
+      
+      if (time <= maxDuration) {
         this.audio.currentTime = time;
       }
     },
