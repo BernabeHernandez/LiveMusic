@@ -12,11 +12,11 @@ export const usePlayerStore = defineStore('player', {
     currentIndex: 0,
     currentTime: 0,
     duration: 0,
-    backendDuration: 0, // ✅ NUEVO: guardar duración del backend
+    backendDuration: 0, 
     progress: 0,
     isShuffleEnabled: false,
     playedIndices: [],
-    durationFixed: false // ✅ NUEVO: flag para saber si ya corregimos
+    durationFixed: false 
   }),
 
   actions: {
@@ -28,14 +28,12 @@ export const usePlayerStore = defineStore('player', {
         this.audio.addEventListener('timeupdate', () => {
           this.currentTime = this.audio.currentTime;
           
-          // ✅ CORRECCIÓN: Usar backendDuration como fuente de verdad
           if (this.backendDuration > 0) {
             this.duration = this.backendDuration;
           } else if (this.audio.duration && !isNaN(this.audio.duration) && isFinite(this.audio.duration)) {
             this.duration = this.audio.duration;
           }
           
-          // ✅ CORRECCIÓN: Si currentTime excede duration, algo está mal
           if (this.currentTime > this.duration && this.duration > 0) {
             console.warn('⚠️ Duración incorrecta detectada. Forzando corrección...');
             this.duration = this.currentTime;
@@ -43,7 +41,6 @@ export const usePlayerStore = defineStore('player', {
           
           this.progress = this.duration > 0 ? (this.currentTime / this.duration) * 100 : 0;
           
-          // ✅ NUEVO: Auto-next cuando llegue al final según backend
           if (this.backendDuration > 0 && this.currentTime >= this.backendDuration - 0.5) {
             console.log('✅ Canción terminada según duración del backend');
             this.nextTrack();
@@ -54,14 +51,12 @@ export const usePlayerStore = defineStore('player', {
           console.log('📊 loadedmetadata - audio.duration:', this.audio.duration);
           console.log('📊 backendDuration guardada:', this.backendDuration);
           
-          // ✅ CORRECCIÓN: Comparar con backend y usar el menor
           if (this.audio.duration && !isNaN(this.audio.duration) && isFinite(this.audio.duration)) {
             const audioDuration = this.audio.duration;
             
-            // Si backend y audio difieren mucho, usar backend
             if (this.backendDuration > 0) {
               const diff = Math.abs(audioDuration - this.backendDuration);
-              if (diff > 10) { // Si difieren más de 10 segundos
+              if (diff > 10) { 
                 console.warn('⚠️ Duración discrepante:', {
                   audio: audioDuration,
                   backend: this.backendDuration,
@@ -88,7 +83,6 @@ export const usePlayerStore = defineStore('player', {
           alert('Error al reproducir esta canción. Puede estar restringida o no disponible.');
         });
 
-        // ✅ NUEVO: Detectar cuando se carga el audio
         this.audio.addEventListener('canplay', () => {
           console.log('✅ Audio listo para reproducir');
           console.log('📊 Duración final:', this.duration);
@@ -119,9 +113,9 @@ export const usePlayerStore = defineStore('player', {
         const data = await response.json();
 
         if (data.audioUrl) {
-          // ✅ CORRECCIÓN: Resetear TODO
+
           this.duration = 0;
-          this.backendDuration = data.duration || 0; // ✅ Guardar duración del backend
+          this.backendDuration = data.duration || 0; 
           this.currentTime = 0;
           this.progress = 0;
           this.durationFixed = false;
@@ -134,7 +128,6 @@ export const usePlayerStore = defineStore('player', {
           await this.audio.play();
           this.isPlaying = true;
 
-          // Actualizar metadata real
           const infoRes = await fetch(`${API_URL}/api/video-info/${videoId}`);
           if (infoRes.ok) {
             const info = await infoRes.json();
@@ -165,7 +158,6 @@ export const usePlayerStore = defineStore('player', {
     seekTo(percent) {
       if (!this.audio || isNaN(this.duration) || this.duration === 0) return;
       
-      // ✅ CORRECCIÓN: Usar backendDuration si está disponible
       const maxDuration = this.backendDuration > 0 ? this.backendDuration : this.duration;
       const time = (percent / 100) * maxDuration;
       

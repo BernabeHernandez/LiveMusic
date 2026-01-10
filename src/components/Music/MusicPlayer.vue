@@ -1,6 +1,6 @@
 <script setup>
 import { onMounted, onUnmounted, ref, computed } from 'vue'
-import { usePlayerStore } from '../stores/player'
+import { usePlayerStore } from '../../../src/stores/player'
 
 const playerStore = usePlayerStore()
 const audioElement = ref(null)
