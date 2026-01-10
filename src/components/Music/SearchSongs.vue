@@ -62,10 +62,8 @@ const search = async (loadMore = false) => {
       errorMessage.value = 'No se encontraron resultados'
     }
 
-    // Esperar a que el DOM se actualice antes de verificar scroll
     await nextTick()
     
-    // Si después de cargar no hay scroll (todo cabe en la pantalla), cargar más automáticamente
     if (hasMore.value && !isScrollable()) {
       console.log('⚠️ No hay scroll, cargando más automáticamente...');
       setTimeout(() => {
@@ -126,7 +124,6 @@ const formatDuration = (seconds) => {
 let scrollTimeout = null
 
 const handleScroll = () => {
-  // Debounce para evitar múltiples llamadas
   if (scrollTimeout) {
     clearTimeout(scrollTimeout)
   }
@@ -137,7 +134,7 @@ const handleScroll = () => {
     const clientHeight = document.documentElement.clientHeight
     
     const scrolled = scrollTop + clientHeight
-    const threshold = scrollHeight * 0.80 // 80% del scroll
+    const threshold = scrollHeight * 0.80 
     
     console.log('📍 Scroll:', {
       scrollTop: Math.round(scrollTop),
@@ -152,7 +149,7 @@ const handleScroll = () => {
       console.log('🎯 Umbral alcanzado, cargando más...');
       loadMoreResults()
     }
-  }, 150) // Esperar 150ms después del último scroll
+  }, 150) 
 }
 
 watch(
@@ -169,8 +166,6 @@ watch(
 onMounted(() => {
   console.log('✅ Componente montado, añadiendo listener de scroll');
   window.addEventListener('scroll', handleScroll, { passive: true })
-  
-  // También escuchar el scroll del contenedor
   document.addEventListener('scroll', handleScroll, { passive: true })
 })
 
@@ -192,7 +187,7 @@ onUnmounted(() => {
     </div>
 
     <div v-if="isLoading && !results.length" class="loading">
-      <Loader :size="32" class="spinner" />
+      <Loader :size="40" class="spinner" />
       <p>Buscando las mejores canciones...</p>
     </div>
 
@@ -200,27 +195,28 @@ onUnmounted(() => {
       <p>{{ errorMessage }}</p>
     </div>
 
-    <div class="results" v-if="results.length">
+    <div class="results-grid" v-if="results.length">
       <div
         v-for="(item, index) in results"
-        :key="`${item.videoId}-${index}`"
+        :key="`${item.videoId || item.url}-${index}`"
         class="song-card"
-        :class="{ 'is-playing': playerStore.currentTrack?.videoId === item.videoId }"
+        :class="{ 'is-playing': playerStore.currentTrack?.videoId === (item.videoId || item.url?.split('v=')[1]?.split('&')[0]) }"
         @click="playTrack(item, index)"
       >
         <div class="thumbnail-wrapper">
           <img
             :src="item.thumbnail"
-            @error="e => e.target.src = 'https://via.placeholder.com/60?text=🎵'"
+            @error="e => { e.target.src = 'https://via.placeholder.com/120?text=🎵' }"
             class="thumbnail"
             alt="Portada"
+            loading="lazy"
           />
           <div class="play-overlay">
-            <Play v-if="playerStore.currentTrack?.videoId !== item.videoId || !playerStore.isPlaying" 
-                  :size="28" 
+            <Play v-if="!playerStore.currentTrack || playerStore.currentTrack?.videoId !== (item.videoId || item.url?.split('v=')[1]?.split('&')[0]) || !playerStore.isPlaying" 
+                  :size="32" 
                   class="play-icon" 
             />
-            <Pause v-else :size="28" class="play-icon" />
+            <Pause v-else :size="32" class="play-icon" />
           </div>
         </div>
         
@@ -229,11 +225,11 @@ onUnmounted(() => {
           <div class="metadata">
             <Music :size="14" class="metadata-icon" />
             <span class="artist">{{ item.artist || item.uploader || 'YouTube' }}</span>
-            <span v-if="item.duration" class="duration">• {{ formatDuration(item.duration) }}</span>
+            <span v-if="item.duration" class="duration">{{ formatDuration(item.duration) }}</span>
           </div>
         </div>
-        
-        <div class="play-indicator" v-if="playerStore.currentTrack?.videoId === item.videoId">
+
+        <div class="play-indicator" v-if="playerStore.currentTrack?.videoId === (item.videoId || item.url?.split('v=')[1]?.split('&')[0])">
           <div class="equalizer" v-if="playerStore.isPlaying">
             <span class="bar"></span>
             <span class="bar"></span>
@@ -244,45 +240,52 @@ onUnmounted(() => {
     </div>
 
     <div v-if="isLoadingMore" class="loading-more">
-      <Loader :size="24" class="spinner" />
-      <p>Cargando más canciones... ({{ results.length }} cargadas)</p>
+      <Loader :size="28" class="spinner" />
+      <p>Cargando más... ({{ results.length }} canciones)</p>
     </div>
 
     <div v-if="!hasMore && results.length && !isLoading && !isLoadingMore" class="no-more-results">
-      <p>✅ Has visto todos los resultados disponibles ({{ results.length }} canciones)</p>
-    </div>
-
-    <div v-if="hasMore && results.length >= 30 && !isLoadingMore && !isLoading" class="load-more-hint">
-      <p>⬇️ Desliza hacia abajo para ver más resultados</p>
+      <p>¡Has llegado al final! ({{ results.length }} canciones)</p>
     </div>
   </div>
 </template>
 
 <style scoped>
+/* <CHANGE> Base styles optimized for mobile first */
 .search-container {
-  padding: 20px;
-  padding-bottom: 150px;
-  max-width: 1200px;
-  margin: 0 auto;
+  padding: 0.75rem;
+  padding-bottom: 140px;
   min-height: 100vh;
+  color: white;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .search-header {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-bottom: 30px;
-  color: white;
+  gap: 0.75rem;
+  margin-bottom: 1.25rem;
+  padding: 0.25rem 0;
 }
 
 .search-icon {
   color: #1db954;
+  flex-shrink: 0;
 }
 
 .search-header h2 {
   margin: 0;
-  font-size: 28px;
+  font-size: 1.25rem;
   font-weight: 700;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 
 .loading, .loading-more {
@@ -290,14 +293,15 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 15px;
-  padding: 40px 20px;
+  min-height: 50vh;
+  gap: 1rem;
   color: #b3b3b3;
+  padding: 1rem;
 }
 
-.loading p, .loading-more p {
-  margin: 0;
-  font-size: 14px;
+.loading-more {
+  min-height: auto;
+  padding: 2rem 1rem;
 }
 
 .spinner {
@@ -305,51 +309,50 @@ onUnmounted(() => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
 .error-message {
-  background: rgba(255, 68, 68, 0.1);
+  background: rgba(255, 68, 68, 0.12);
   border: 1px solid #ff4444;
   color: #ff6b6b;
-  padding: 20px;
-  border-radius: 12px;
-  margin-bottom: 20px;
+  padding: 1rem;
+  border-radius: 10px;
   text-align: center;
+  margin: 1rem 0;
 }
 
-.error-message p {
-  margin: 0;
+/* <CHANGE> Improved grid system with better breakpoints */
+.results-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.65rem;
+  width: 100%;
 }
 
-.results {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
+/* <CHANGE> Song card with better mobile optimization */
 .song-card {
   display: flex;
   align-items: center;
-  gap: 15px;
-  padding: 12px;
+  gap: 0.75rem;
+  padding: 0.65rem;
   background: #181818;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
-  border: 2px solid transparent;
+  min-height: 72px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
-.song-card:hover {
-  background: #282828;
-  border-color: #1db954;
-}
-
+.song-card:hover,
 .song-card.is-playing {
   background: #282828;
-  border-color: #1db954;
+}
+
+.song-card:active {
+  transform: scale(0.98);
 }
 
 .thumbnail-wrapper {
@@ -357,9 +360,10 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
+/* <CHANGE> Responsive thumbnail sizes */
 .thumbnail {
-  width: 64px;
-  height: 64px;
+  width: 60px;
+  height: 60px;
   border-radius: 6px;
   object-fit: cover;
   display: block;
@@ -367,50 +371,55 @@ onUnmounted(() => {
 
 .play-overlay {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: opacity 0.25s ease;
   border-radius: 6px;
 }
 
-.song-card:hover .play-overlay {
+.song-card:hover .play-overlay,
+.song-card:active .play-overlay {
   opacity: 1;
 }
 
 .play-icon {
   color: white;
-  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.5));
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
 }
 
+/* <CHANGE> Better text overflow handling */
 .info {
   flex: 1;
   min-width: 0;
+  overflow: hidden;
+  padding-right: 0.5rem;
 }
 
 .title {
-  margin: 0 0 6px 0;
+  margin: 0 0 0.3rem 0;
   font-weight: 600;
-  color: white;
-  font-size: 15px;
+  font-size: 0.875rem;
+  line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
-  line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-word;
 }
 
 .metadata {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 0.4rem;
   color: #b3b3b3;
-  font-size: 13px;
+  font-size: 0.75rem;
+  line-height: 1.2;
+  flex-wrap: wrap;
 }
 
 .metadata-icon {
@@ -421,102 +430,402 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+  min-width: 0;
 }
 
 .duration {
   flex-shrink: 0;
   color: #888;
+  white-space: nowrap;
 }
 
 .play-indicator {
   flex-shrink: 0;
   margin-left: auto;
+  padding-left: 0.5rem;
 }
 
 .equalizer {
   display: flex;
   align-items: flex-end;
-  gap: 3px;
+  gap: 2.5px;
   height: 20px;
 }
 
-.equalizer .bar {
+.bar {
   width: 3px;
   background: #1db954;
   border-radius: 3px;
-  animation: equalize 0.8s ease-in-out infinite;
+  animation: equalize 0.9s ease-in-out infinite;
 }
 
-.equalizer .bar:nth-child(1) {
-  animation-delay: 0s;
-}
-
-.equalizer .bar:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.equalizer .bar:nth-child(3) {
-  animation-delay: 0.4s;
-}
+.bar:nth-child(2) { animation-delay: 0.2s; }
+.bar:nth-child(3) { animation-delay: 0.35s; }
 
 @keyframes equalize {
-  0%, 100% { height: 4px; }
-  50% { height: 20px; }
+  0%, 100% { height: 5px; }
+  50%      { height: 20px; }
 }
 
 .no-more-results {
   text-align: center;
-  padding: 40px 20px;
+  padding: 2.5rem 1rem;
   color: #1db954;
-  font-size: 14px;
   font-weight: 500;
-  background: rgba(29, 185, 84, 0.1);
-  border-radius: 12px;
-  margin-top: 20px;
+  font-size: 0.875rem;
 }
 
-.no-more-results p {
-  margin: 0;
-}
-
-.load-more-hint {
-  text-align: center;
-  padding: 20px;
-  color: #666;
-  font-size: 13px;
-  animation: bounce 2s ease-in-out infinite;
-}
-
-.load-more-hint p {
-  margin: 0;
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-5px); }
-}
-
-@media (max-width: 768px) {
+/* <CHANGE> Extra small devices (320px - 374px) */
+@media (max-width: 374px) {
   .search-container {
-    padding: 15px;
-    padding-bottom: 150px;
+    padding: 0.5rem;
+    padding-bottom: 130px;
   }
-
+  
+  .search-header {
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
   .search-header h2 {
-    font-size: 22px;
+    font-size: 1.125rem;
   }
+  
+  .search-icon {
+    width: 20px;
+    height: 20px;
+  }
+  
+  .thumbnail {
+    width: 52px;
+    height: 52px;
+  }
+  
+  .song-card {
+    gap: 0.6rem;
+    padding: 0.6rem;
+    min-height: 64px;
+  }
+  
+  .title {
+    font-size: 0.8125rem;
+  }
+  
+  .metadata {
+    font-size: 0.6875rem;
+    gap: 0.3rem;
+  }
+  
+  .metadata-icon {
+    width: 12px;
+    height: 12px;
+  }
+}
 
+/* <CHANGE> Small mobile devices (375px - 479px) */
+@media (min-width: 375px) and (max-width: 479px) {
   .thumbnail {
     width: 56px;
     height: 56px;
   }
-
+  
   .title {
-    font-size: 14px;
+    font-size: 0.85rem;
   }
+}
 
+/* <CHANGE> Large mobile devices (480px - 639px) */
+@media (min-width: 480px) and (max-width: 639px) {
+  .search-container {
+    padding: 0.875rem;
+  }
+  
+  .results-grid {
+    gap: 0.75rem;
+  }
+  
+  .song-card {
+    padding: 0.75rem;
+    gap: 0.85rem;
+  }
+  
+  .thumbnail {
+    width: 64px;
+    height: 64px;
+  }
+  
+  .title {
+    font-size: 0.9rem;
+  }
+  
   .metadata {
-    font-size: 12px;
+    font-size: 0.8rem;
+  }
+}
+
+/* <CHANGE> Small tablets (640px - 767px) */
+@media (min-width: 640px) {
+  .search-container {
+    padding: 1rem;
+  }
+  
+  .search-header {
+    gap: 0.875rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .search-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .search-icon {
+    width: 26px;
+    height: 26px;
+  }
+  
+  .results-grid {
+    gap: 1rem;
+  }
+  
+  .song-card {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .thumbnail {
+    width: 70px;
+    height: 70px;
+  }
+  
+  .title {
+    font-size: 1rem;
+  }
+  
+  .metadata {
+    font-size: 0.8125rem;
+    gap: 0.45rem;
+  }
+  
+  .metadata-icon {
+    width: 15px;
+    height: 15px;
+  }
+  
+  .equalizer {
+    height: 22px;
+    gap: 3px;
+  }
+  
+  .bar {
+    width: 3.5px;
+  }
+  
+  @keyframes equalize {
+    0%, 100% { height: 6px; }
+    50%      { height: 22px; }
+  }
+}
+
+/* <CHANGE> Tablets (768px - 1023px) - 2 columns */
+@media (min-width: 768px) {
+  .search-container {
+    padding: 1.25rem;
+  }
+  
+  .results-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+  
+  .search-header h2 {
+    font-size: 1.75rem;
+  }
+  
+  .song-card {
+    padding: 1rem;
+    gap: 1rem;
+  }
+  
+  .thumbnail {
+    width: 76px;
+    height: 76px;
+    border-radius: 8px;
+  }
+  
+  .play-overlay {
+    border-radius: 8px;
+  }
+  
+  .title {
+    font-size: 1rem;
+  }
+  
+  .metadata {
+    font-size: 0.875rem;
+    gap: 0.45rem;
+  }
+  
+  .metadata-icon {
+    width: 16px;
+    height: 16px;
+  }
+  
+  .equalizer {
+    height: 22px;
+    gap: 3px;
+  }
+  
+  .bar {
+    width: 3.5px;
+  }
+  
+  @keyframes equalize {
+    0%, 100% { height: 6px; }
+    50%      { height: 22px; }
+  }
+}
+
+/* <CHANGE> Small laptops (1024px - 1279px) - 3 columns */
+@media (min-width: 1024px) {
+  .search-container {
+    padding: 1.5rem 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  
+  .results-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.125rem;
+  }
+  
+  .search-header {
+    gap: 1rem;
+    margin-bottom: 1.75rem;
+  }
+  
+  .search-header h2 {
+    font-size: 2rem;
+  }
+  
+  .search-icon {
+    width: 28px;
+    height: 28px;
+  }
+  
+  .song-card {
+    padding: 1.125rem;
+    gap: 1.125rem;
+  }
+  
+  .thumbnail {
+    width: 84px;
+    height: 84px;
+  }
+  
+  .play-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .title {
+    font-size: 1.0625rem;
+  }
+  
+  .metadata {
+    font-size: 0.9rem;
+  }
+  
+  .no-more-results {
+    padding: 3rem 1rem;
+    font-size: 0.9375rem;
+  }
+}
+
+/* <CHANGE> Large laptops and desktops (1280px - 1535px) - 4 columns */
+@media (min-width: 1280px) {
+  .results-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1.25rem;
+  }
+  
+  .search-header h2 {
+    font-size: 2.25rem;
+  }
+  
+  .song-card {
+    padding: 1.25rem;
+    gap: 1.25rem;
+  }
+  
+  .thumbnail {
+    width: 90px;
+    height: 90px;
+  }
+  
+  .title {
+    font-size: 1.125rem;
+  }
+  
+  .metadata {
+    font-size: 0.9375rem;
+    gap: 0.5rem;
+  }
+  
+  .equalizer {
+    height: 24px;
+  }
+  
+  .bar {
+    width: 4px;
+  }
+  
+  @keyframes equalize {
+    0%, 100% { height: 7px; }
+    50%      { height: 24px; }
+  }
+}
+
+/* <CHANGE> Extra large screens (1536px+) - 5 columns */
+@media (min-width: 1536px) {
+  .search-container {
+    padding: 2rem 2.5rem;
+    max-width: 1600px;
+  }
+  
+  .results-grid {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1.375rem;
+  }
+  
+  .search-header h2 {
+    font-size: 2.5rem;
+  }
+  
+  .thumbnail {
+    width: 96px;
+    height: 96px;
+  }
+  
+  .title {
+    font-size: 1.1875rem;
+  }
+  
+  .metadata {
+    font-size: 1rem;
+  }
+}
+
+/* <CHANGE> Ultra-wide screens (1920px+) - 6 columns */
+@media (min-width: 1920px) {
+  .search-container {
+    max-width: 1800px;
+    padding: 2.5rem 3rem;
+  }
+  
+  .results-grid {
+    grid-template-columns: repeat(6, 1fr);
+    gap: 1.5rem;
   }
 }
 </style>

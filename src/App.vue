@@ -1,10 +1,13 @@
-<!-- src/App.vue -->
 <template>
   <div class="app-layout">
-    <AppHeader />
+    <AppHeader @toggle-sidebar="toggleSidebar" />
 
     <div class="main-container">
-      <Sidebar class="sidebar" />
+      <Sidebar 
+        class="sidebar" 
+        :isOpen="isSidebarOpen"
+        @close="closeSidebar"
+      />
 
       <main class="content-area">
         <router-view />
@@ -16,89 +19,192 @@
 </template>
 
 <script setup>
+import { ref } from 'vue'
 import AppHeader from './components/layout/AppHeader.vue'
 import Sidebar from './components/layout/Sidebar.vue'
 import MusicPlayer from './components/Music/MusicPlayer.vue'
+
+const isSidebarOpen = ref(false)
+
+const toggleSidebar = () => {
+  isSidebarOpen.value = !isSidebarOpen.value
+}
+
+const closeSidebar = () => {
+  isSidebarOpen.value = false
+}
 </script>
 
 <style scoped>
+/* Layout base optimizado para móviles primero */
 .app-layout {
   height: 100dvh;
-  min-height: -webkit-fill-available; /* Mejora compatibilidad iOS */
-  display: grid;
-  grid-template-rows: auto 1fr auto;
+  min-height: -webkit-fill-available;
+  display: flex;
+  flex-direction: column;
   background: #121212;
   color: white;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;
+  position: relative;
 }
 
+/* Main container con flexbox para mejor control */
 .main-container {
-  display: grid;
-  grid-template-columns: 240px 1fr;
+  display: flex;
+  flex: 1;
   overflow: hidden;
+  min-height: 0;
 }
 
-.content-area {
+/* Sidebar oculto por defecto en móviles */
+.sidebar {
+  display: none;
+  width: 240px;
+  flex-shrink: 0;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch; /* Mejor scroll en iOS */
-  padding: 1.5rem 2rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Content area completamente responsivo */
+.content-area {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 0.75rem;
   background: linear-gradient(to bottom, #121212, #0f0f0f);
+  /* Espacio para el player fijo abajo */
+  padding-bottom: 110px;
 }
 
-/* Mobile-first adjustments */
-@media (max-width: 1024px) {
-  .main-container {
-    grid-template-columns: 220px 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .main-container {
-    grid-template-columns: 1fr;
-  }
-
-  .sidebar {
-    display: none; /* Ocultamos sidebar en móvil */
-  }
-
-  .content-area {
-    padding: 1rem 1.2rem;
-  }
-}
-
-/* Muy pequeños (ej: iPhone SE, móviles antiguos) */
-@media (max-width: 480px) {
-  .content-area {
-    padding: 0.8rem 1rem;
-  }
-}
-
-/* Music Player - muy importante en móvil */
+/* Music Player fijo en la parte inferior */
 .music-player {
-  grid-row: 3;
-  /* Añade estas líneas si tu MusicPlayer no las tiene ya */
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
   width: 100%;
-  max-height: 90px;           /* ← ajusta según tu diseño */
+  height: auto;
+  max-height: 100px;
   min-height: 70px;
   flex-shrink: 0;
+  z-index: 50;
+  background: #181818;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Evitar que el contenido quede tapado por el player en móvil */
-.content-area {
-  padding-bottom: 80px; /* espacio base */
-}
-
-@media (max-width: 768px) {
+/* Móviles pequeños (320px - 479px) */
+@media (min-width: 320px) and (max-width: 479px) {
   .content-area {
-    padding-bottom: 100px; /* más espacio en móvil por el player */
+    padding: 0.5rem 0.75rem;
+    padding-bottom: 100px;
   }
 }
 
-/* Opcional: fondo más oscuro y contraste en móviles */
-@media (max-width: 768px) {
+/* Móviles medianos (480px - 767px) */
+@media (min-width: 480px) and (max-width: 767px) {
+  .content-area {
+    padding: 0.75rem 1rem;
+    padding-bottom: 105px;
+  }
+}
+
+/* Tablets (768px - 1023px) */
+@media (min-width: 768px) {
+  .sidebar {
+    display: block;
+    width: 200px;
+  }
+
+  .content-area {
+    padding: 1rem 1.25rem;
+    padding-bottom: 110px;
+  }
+
+  .music-player {
+    left: 200px;
+  }
+}
+
+/* Laptops pequeños (1024px - 1279px) */
+@media (min-width: 1024px) {
+  .sidebar {
+    width: 240px;
+  }
+
+  .content-area {
+    padding: 1.25rem 1.5rem;
+    padding-bottom: 110px;
+  }
+
+  .music-player {
+    left: 240px;
+  }
+}
+
+/* Desktops (1280px+) */
+@media (min-width: 1280px) {
+  .sidebar {
+    width: 260px;
+  }
+
+  .content-area {
+    padding: 1.5rem 2rem;
+    padding-bottom: 110px;
+  }
+
+  .music-player {
+    left: 260px;
+  }
+}
+
+/* Pantallas muy grandes (1536px+) */
+@media (min-width: 1536px) {
+  .sidebar {
+    width: 280px;
+  }
+
+  .content-area {
+    padding: 2rem 3rem;
+    padding-bottom: 120px;
+  }
+
+  .music-player {
+    left: 280px;
+  }
+}
+
+/* Optimizaciones para iOS Safari */
+@supports (-webkit-touch-callout: none) {
   .app-layout {
-    background: #0a0a0a;
+    height: -webkit-fill-available;
+  }
+}
+
+/* Mejora del scroll en móviles */
+.content-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.content-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.content-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.content-area::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Ocultar scrollbar en Firefox móvil */
+@media (max-width: 767px) {
+  .content-area {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
   }
 }
 </style>

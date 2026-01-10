@@ -1,9 +1,12 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { Menu, X } from 'lucide-vue-next'
 
 const router = useRouter()
 const query = ref('')
+
+const emit = defineEmits(['toggle-sidebar'])
 
 const goSearch = () => {
   if (!query.value.trim()) return
@@ -13,10 +16,22 @@ const goSearch = () => {
     query: { q: query.value }
   })
 }
+
+const toggleSidebar = () => {
+  emit('toggle-sidebar')
+}
 </script>
 
 <template>
   <header class="app-header">
+    <button 
+      @click="toggleSidebar"
+      class="hamburger-btn"
+      aria-label="Toggle menu"
+    >
+      <Menu :size="24" />
+    </button>
+
     <div class="logo">LiveMusic</div>
 
     <nav class="header-nav">
@@ -27,7 +42,7 @@ const goSearch = () => {
         class="search-input"
       />
 
-      <router-link to="/library">Tu biblioteca</router-link>
+      <router-link to="/library" class="library-link">Tu biblioteca</router-link>
     </nav>
   </header>
 </template>
@@ -40,27 +55,53 @@ const goSearch = () => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 2rem;
+  padding: 0 1rem;
   position: sticky;
   top: 0;
   z-index: 100;
 }
 
+.hamburger-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: white;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 8px;
+  transition: background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hamburger-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.hamburger-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 .logo {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: bold;
+  flex-shrink: 0;
 }
 
 .header-nav {
   display: flex;
   align-items: center;
+  gap: 1rem;
+  flex: 1;
+  justify-content: flex-end;
 }
 
 .header-nav a {
   color: white;
   text-decoration: none;
-  margin-left: 2rem;
   opacity: 0.8;
+  white-space: nowrap;
 }
 
 .header-nav a.router-link-active {
@@ -69,17 +110,66 @@ const goSearch = () => {
 }
 
 .search-input {
-  margin-left: 2rem;
   padding: 8px 14px;
   border-radius: 20px;
   border: none;
   outline: none;
   background: rgba(255,255,255,0.15);
   color: white;
-  width: 220px;
+  width: 160px;
+  font-size: 0.9rem;
 }
 
 .search-input::placeholder {
   color: rgba(255,255,255,0.7);
+}
+
+@media (min-width: 768px) {
+  .app-header {
+    padding: 0 2rem;
+  }
+
+  .hamburger-btn {
+    display: none;
+  }
+
+  .logo {
+    font-size: 1.6rem;
+  }
+
+  .search-input {
+    width: 220px;
+    font-size: 1rem;
+  }
+
+  .header-nav {
+    gap: 2rem;
+  }
+}
+
+@media (max-width: 479px) {
+  .app-header {
+    padding: 0 0.75rem;
+  }
+
+  .logo {
+    font-size: 1.2rem;
+  }
+
+  .search-input {
+    width: 120px;
+    font-size: 0.85rem;
+    padding: 6px 10px;
+  }
+
+  .library-link {
+    display: none;
+  }
+}
+
+@media (min-width: 480px) and (max-width: 767px) {
+  .search-input {
+    width: 140px;
+  }
 }
 </style>
