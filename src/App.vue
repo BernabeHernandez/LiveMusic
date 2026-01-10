@@ -18,7 +18,7 @@
 <script setup>
 import AppHeader from './components/layout/AppHeader.vue'
 import Sidebar from './components/layout/Sidebar.vue'
-import MusicPlayer from './components/music/MusicPlayer.vue'
+import MusicPlayer from './components/Music/MusicPlayer.vue'
 
 </script>
 
