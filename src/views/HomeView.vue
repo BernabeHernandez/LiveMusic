@@ -8,7 +8,6 @@ const playerStore = usePlayerStore()
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
-/* 🔥 Artistas más sonados */
 const artists = ref([
   { name: 'Peso Pluma', genre: 'Corridos Tumbados' },
   { name: 'Natanael Cano', genre: 'Corridos Tumbados' },
@@ -21,7 +20,6 @@ const artists = ref([
   { name: 'Fuerza Regida', genre: 'Corridos' }
 ])
 
-/* 🎵 Canciones populares */
 const songs = ref([
   { title: 'Ella Baila Sola', artist: 'Peso Pluma', genre: 'Corridos Tumbados' },
   { title: 'PRC', artist: 'Natanael Cano', genre: 'Corridos Tumbados' },
@@ -33,7 +31,6 @@ const songs = ref([
   { title: 'Un X100to', artist: 'Grupo Frontera', genre: 'Regional Mexicano' }
 ])
 
-/* 🔀 Mezclar */
 const shuffledArtists = computed(() =>
   [...artists.value].sort(() => Math.random() - 0.5).slice(0, 6)
 )
@@ -42,7 +39,6 @@ const shuffledSongs = computed(() =>
   [...songs.value].sort(() => Math.random() - 0.5).slice(0, 8)
 )
 
-/* 🔍 Buscar artista */
 const goSearch = (text) => {
   router.push({
     name: 'search',
@@ -50,7 +46,6 @@ const goSearch = (text) => {
   })
 }
 
-/* ▶ Reproducir canción (REAL) */
 const playSong = async (song) => {
   try {
     const query = `${song.title} ${song.artist}`
@@ -81,7 +76,6 @@ const playSong = async (song) => {
 <template>
   <div class="home">
 
-    <!-- 👤 ARTISTAS -->
     <section class="section">
       <h2>Artistas más sonados 🔥</h2>
 
@@ -99,7 +93,6 @@ const playSong = async (song) => {
       </div>
     </section>
 
-    <!-- 🎵 CANCIONES -->
     <section class="section">
       <h2>Para ti ✨</h2>
 
@@ -133,7 +126,6 @@ const playSong = async (song) => {
   padding: 2rem;
 }
 
-/* Secciones */
 .section {
   margin-bottom: 3rem;
 }
@@ -142,7 +134,6 @@ const playSong = async (song) => {
   margin-bottom: 1.2rem;
 }
 
-/* Grid artistas */
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -168,7 +159,7 @@ const playSong = async (song) => {
   margin-bottom: 0.6rem;
 }
 
-/* Canciones */
+
 .song-list {
   display: flex;
   flex-direction: column;

@@ -1,6 +1,14 @@
 <script setup>
 import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { usePlayerStore } from '../../../src/stores/player'
+import { 
+  Play, 
+  Pause, 
+  SkipBack, 
+  SkipForward, 
+  Shuffle, 
+  Repeat
+} from 'lucide-vue-next'
 
 const playerStore = usePlayerStore()
 const audioElement = ref(null)
@@ -11,7 +19,7 @@ const canGoPrevious = computed(() => {
 })
 
 const canGoNext = computed(() => {
-  return playerStore.currentIndex < playerStore.queue.length - 1 || playerStore.isShuffleEnabled
+  return playerStore.currentIndex < playerStore.queue.length - 1
 })
 
 onMounted(() => {
@@ -21,10 +29,6 @@ onMounted(() => {
 onUnmounted(() => {
   playerStore.cleanup()
 })
-
-const handleVolumeChange = (e) => {
-  playerStore.setVolume(parseFloat(e.target.value))
-}
 
 const handleSeekStart = () => {
   isSeeking.value = true
@@ -79,25 +83,53 @@ const formatTime = (seconds) => {
       </div>
 
       <div class="controls">
-        <button @click="playerStore.toggleShuffle()" class="control-button shuffle-button" :class="{ active: playerStore.isShuffleEnabled }">
-          🔀
+        <button 
+          @click="playerStore.toggleShuffle()" 
+          class="control-button shuffle-button" 
+          :class="{ active: playerStore.isShuffleEnabled }"
+          title="Aleatorio"
+        >
+          <Shuffle :size="18" />
         </button>
-        <button @click="playerStore.previousTrack()" class="control-button" :disabled="!canGoPrevious">
-          ⏮
+        
+        <button 
+          @click="playerStore.previousTrack()" 
+          class="control-button" 
+          :disabled="!canGoPrevious"
+          title="Anterior"
+        >
+          <SkipBack :size="20" />
         </button>
-        <button @click="playerStore.togglePlay()" class="play-button">
-          {{ playerStore.isPlaying ? '⏸' : '▶' }}
+        
+        <button @click="playerStore.togglePlay()" class="play-button" title="Reproducir/Pausar">
+          <Play v-if="!playerStore.isPlaying" :size="24" />
+          <Pause v-else :size="24" />
         </button>
-        <button @click="playerStore.nextTrack()" class="control-button" :disabled="!canGoNext">
-          ⏭
+        
+        <button 
+          @click="playerStore.nextTrack()" 
+          class="control-button" 
+          :disabled="!canGoNext"
+          title="Siguiente"
+        >
+          <SkipForward :size="20" />
+        </button>
+
+        <button 
+          @click="playerStore.toggleRepeat()" 
+          class="control-button repeat-button" 
+          :class="{ active: playerStore.isRepeatEnabled }"
+          title="Repetir canción actual"
+        >
+          <Repeat :size="18" />
         </button>
       </div>
-    </div>
 
-    <div class="volume-control">
-      <span class="volume-icon">{{ playerStore.volume === 0 ? '🔇' : playerStore.volume < 0.5 ? '🔉' : '🔊' }}</span>
-      <input type="range" min="0" max="1" step="0.01" :value="playerStore.volume" @input="handleVolumeChange" class="volume-slider" />
-      <span class="volume-percent">{{ Math.round(playerStore.volume * 100) }}%</span>
+      <div class="queue-info" v-if="playerStore.queue.length > 0">
+        <span class="queue-text">
+          {{ playerStore.currentIndex + 1 }} / {{ playerStore.queue.length }}
+        </span>
+      </div>
     </div>
   </div>
 </template>
@@ -232,7 +264,6 @@ const formatTime = (seconds) => {
   background: transparent;
   border: none;
   color: #b3b3b3;
-  font-size: 20px;
   cursor: pointer;
   padding: 8px;
   border-radius: 50%;
@@ -247,7 +278,7 @@ const formatTime = (seconds) => {
 .control-button:hover:not(:disabled) {
   color: white;
   background: #282828;
-  transform: scale(1.1);
+  transform: scale(1.05);
 }
 
 .control-button:disabled {
@@ -255,7 +286,8 @@ const formatTime = (seconds) => {
   cursor: not-allowed;
 }
 
-.shuffle-button.active {
+.shuffle-button.active,
+.repeat-button.active {
   color: #1db954;
   background: #282828;
 }
@@ -267,7 +299,6 @@ const formatTime = (seconds) => {
   height: 42px;
   border-radius: 50%;
   cursor: pointer;
-  font-size: 18px;
   color: white;
   display: flex;
   align-items: center;
@@ -281,52 +312,13 @@ const formatTime = (seconds) => {
   transform: scale(1.1);
 }
 
-.volume-control {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  flex: 1;
-  max-width: 200px;
-  justify-content: flex-end;
+.queue-info {
+  margin-top: 4px;
 }
 
-.volume-icon {
-  font-size: 18px;
-}
-
-.volume-slider {
-  flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: #404040;
-  outline: none;
-  -webkit-appearance: none;
-  cursor: pointer;
-}
-
-.volume-slider::-webkit-slider-thumb {
-  -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #1db954;
-  cursor: pointer;
-}
-
-.volume-slider::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #1db954;
-  cursor: pointer;
-  border: none;
-}
-
-.volume-percent {
+.queue-text {
   font-size: 11px;
   color: #b3b3b3;
-  min-width: 35px;
-  text-align: right;
 }
 
 @media (max-width: 768px) {
@@ -337,8 +329,7 @@ const formatTime = (seconds) => {
   }
   
   .track-info,
-  .player-controls,
-  .volume-control {
+  .player-controls {
     max-width: 100%;
     width: 100%;
   }

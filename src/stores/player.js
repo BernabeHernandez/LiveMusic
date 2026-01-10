@@ -16,7 +16,8 @@ export const usePlayerStore = defineStore('player', {
     progress: 0,
     isShuffleEnabled: false,
     playedIndices: [],
-    durationFixed: false 
+    durationFixed: false,
+    isRepeatEnabled: false // Nueva opción para repetir una canción
   }),
 
   actions: {
@@ -41,9 +42,10 @@ export const usePlayerStore = defineStore('player', {
           
           this.progress = this.duration > 0 ? (this.currentTime / this.duration) * 100 : 0;
           
+          // Detectar fin de canción usando duración del backend
           if (this.backendDuration > 0 && this.currentTime >= this.backendDuration - 0.5) {
             console.log('✅ Canción terminada según duración del backend');
-            this.nextTrack();
+            this.handleTrackEnd();
           }
         });
 
@@ -75,18 +77,51 @@ export const usePlayerStore = defineStore('player', {
 
         this.audio.addEventListener('ended', () => {
           console.log('🎵 Evento ended disparado');
-          this.nextTrack();
+          this.handleTrackEnd();
         });
 
         this.audio.addEventListener('error', (e) => {
           console.error('❌ Error al reproducir audio:', e);
           alert('Error al reproducir esta canción. Puede estar restringida o no disponible.');
+          // Si hay error, intentar con la siguiente
+          this.nextTrack();
         });
 
         this.audio.addEventListener('canplay', () => {
           console.log('✅ Audio listo para reproducir');
           console.log('📊 Duración final:', this.duration);
         });
+      }
+    },
+
+    // Nuevo método para manejar el fin de una canción
+    handleTrackEnd() {
+      if (this.isRepeatEnabled) {
+        // Si repeat está activado, volver a reproducir la misma canción
+        this.audio.currentTime = 0;
+        this.audio.play();
+      } else {
+        // Si no, pasar a la siguiente
+        this.nextTrack();
+      }
+    },
+
+    // Nuevo método para agregar toda una lista a la cola
+    setQueue(tracks, startIndex = 0) {
+      this.queue = tracks;
+      this.currentIndex = startIndex;
+      const track = this.queue[this.currentIndex];
+      if (track) {
+        this.playTrack(track.videoId, track);
+      }
+    },
+
+    // Nuevo método para agregar una canción a la cola sin reproducirla
+    addToQueue(track) {
+      const exists = this.queue.findIndex(t => t.videoId === track.videoId);
+      if (exists === -1) {
+        this.queue.push(track);
+        console.log('➕ Canción agregada a la cola:', track.title);
       }
     },
 
@@ -98,12 +133,14 @@ export const usePlayerStore = defineStore('player', {
         videoId
       };
 
+      // Actualizar el índice actual si la canción ya está en la cola
       const existingIndex = this.queue.findIndex(t => t.videoId === videoId);
-      if (existingIndex === -1) {
+      if (existingIndex !== -1) {
+        this.currentIndex = existingIndex;
+      } else {
+        // Si no está en la cola, agregarla
         this.queue.push(this.currentTrack);
         this.currentIndex = this.queue.length - 1;
-      } else {
-        this.currentIndex = existingIndex;
       }
 
       try {
@@ -113,7 +150,7 @@ export const usePlayerStore = defineStore('player', {
         const data = await response.json();
 
         if (data.audioUrl) {
-
+          // Resetear duración y progreso
           this.duration = 0;
           this.backendDuration = data.duration || 0; 
           this.currentTime = 0;
@@ -128,6 +165,7 @@ export const usePlayerStore = defineStore('player', {
           await this.audio.play();
           this.isPlaying = true;
 
+          // Obtener metadata completa
           const infoRes = await fetch(`${API_URL}/api/video-info/${videoId}`);
           if (infoRes.ok) {
             const info = await infoRes.json();
@@ -178,26 +216,58 @@ export const usePlayerStore = defineStore('player', {
       if (!this.isShuffleEnabled) this.playedIndices = [];
     },
 
-    nextTrack() {
-      if (this.queue.length === 0) return;
+    toggleRepeat() {
+      this.isRepeatEnabled = !this.isRepeatEnabled;
+    },
 
-      if (this.isShuffleEnabled) {
-        if (this.playedIndices.length >= this.queue.length) this.playedIndices = [];
-        let randomIndex;
-        do {
-          randomIndex = Math.floor(Math.random() * this.queue.length);
-        } while (this.playedIndices.includes(randomIndex));
-        this.playedIndices.push(randomIndex);
-        this.currentIndex = randomIndex;
-      } else {
-        this.currentIndex = (this.currentIndex + 1) % this.queue.length;
+    nextTrack() {
+      if (this.queue.length === 0) {
+        console.warn('⚠️ No hay canciones en la cola');
+        return;
       }
 
+      // Si solo hay una canción y no está shuffle, no hacer nada
+      if (this.queue.length === 1 && !this.isShuffleEnabled) {
+        console.log('ℹ️ Solo hay una canción en la cola');
+        this.audio.pause();
+        this.isPlaying = false;
+        return;
+      }
+
+      let nextIndex;
+
+      if (this.isShuffleEnabled) {
+        // Modo shuffle
+        if (this.playedIndices.length >= this.queue.length) {
+          this.playedIndices = [];
+        }
+        
+        do {
+          nextIndex = Math.floor(Math.random() * this.queue.length);
+        } while (this.playedIndices.includes(nextIndex) && this.playedIndices.length < this.queue.length);
+        
+        this.playedIndices.push(nextIndex);
+      } else {
+        // Modo normal - avanzar al siguiente
+        nextIndex = this.currentIndex + 1;
+        
+        // Si llegamos al final, detener (no repetir desde el inicio)
+        if (nextIndex >= this.queue.length) {
+          console.log('ℹ️ Llegaste al final de la cola');
+          this.audio.pause();
+          this.isPlaying = false;
+          return;
+        }
+      }
+
+      this.currentIndex = nextIndex;
       const next = this.queue[this.currentIndex];
+      console.log('⏭️ Siguiente canción:', next.title);
       this.playTrack(next.videoId, next);
     },
 
     previousTrack() {
+      // Si la canción lleva más de 3 segundos, reiniciarla
       if (this.currentTime > 3) {
         this.audio.currentTime = 0;
         return;
@@ -205,14 +275,27 @@ export const usePlayerStore = defineStore('player', {
 
       if (this.queue.length === 0) return;
 
+      let prevIndex;
+
       if (this.isShuffleEnabled && this.playedIndices.length > 1) {
+        // En shuffle, volver al anterior de la lista reproducida
         this.playedIndices.pop();
-        this.currentIndex = this.playedIndices[this.playedIndices.length - 1];
+        prevIndex = this.playedIndices[this.playedIndices.length - 1];
       } else {
-        this.currentIndex = this.currentIndex > 0 ? this.currentIndex - 1 : this.queue.length - 1;
+        // Modo normal - retroceder
+        prevIndex = this.currentIndex - 1;
+        
+        // Si estamos al inicio, no hacer nada
+        if (prevIndex < 0) {
+          console.log('ℹ️ Ya estás en la primera canción');
+          this.audio.currentTime = 0;
+          return;
+        }
       }
 
+      this.currentIndex = prevIndex;
       const prev = this.queue[this.currentIndex];
+      console.log('⏮️ Canción anterior:', prev.title);
       this.playTrack(prev.videoId, prev);
     },
 
