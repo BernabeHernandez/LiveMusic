@@ -13,30 +13,41 @@ const query = ref('')
 const results = ref([])
 const isLoading = ref(false)
 const errorMessage = ref('')
-const currentLimit = ref(50)
+const currentOffset = ref(0)
 const hasMore = ref(true)
 const isLoadingMore = ref(false)
+const totalAvailable = ref(0)
+
+const INITIAL_LIMIT = 20
+const LOAD_MORE_LIMIT = 15     
+const MAX_RESULTS = 100
+const MAX_AUTO_LOADS = 6    
+
+let autoLoadCount = 0
 
 const search = async (loadMore = false) => {
   if (!query.value.trim()) return
 
   if (!loadMore) {
-    console.log('🔍 Nueva búsqueda');
+    console.log('Nueva búsqueda');
     isLoading.value = true
     results.value = []
-    currentLimit.value = 50
+    currentOffset.value = 0
     hasMore.value = true
+    totalAvailable.value = 0
+    autoLoadCount = 0
   } else {
-    console.log('📥 Cargando más resultados');
+    console.log(' Cargando más (offset:', currentOffset.value, ')');
     isLoadingMore.value = true
-    currentLimit.value += 30
   }
   
   errorMessage.value = ''
 
   try {
-    const url = `${API_URL}/api/search?q=${encodeURIComponent(query.value)}&limit=${currentLimit.value}`
-    console.log('🌐 Petición:', url);
+    const limit = loadMore ? LOAD_MORE_LIMIT : INITIAL_LIMIT
+    const offset = currentOffset.value
+    
+    const url = `${API_URL}/api/search?q=${encodeURIComponent(query.value)}&limit=${limit}&offset=${offset}`
     
     const response = await fetch(url)
     const data = await response.json()
@@ -46,15 +57,22 @@ const search = async (loadMore = false) => {
     }
 
     const items = data.items || []
-    results.value = items
-
-    hasMore.value = data.hasMore !== undefined ? data.hasMore : false
     
-    console.log('✅ Resultados:', {
+    if (loadMore) {
+      results.value = [...results.value, ...items]
+    } else {
+      results.value = items
+    }
+
+    totalAvailable.value = data.total || 0
+    hasMore.value = data.hasMore
+    currentOffset.value += items.length
+    
+    console.log(' Resultados:', {
       recibidos: items.length,
-      total: data.total,
-      unicos: data.unique,
-      filtrados: data.filtered,
+      totalCargados: results.value.length,
+      totalDisponibles: totalAvailable.value,
+      offset: currentOffset.value,
       hayMas: hasMore.value
     });
 
@@ -63,43 +81,55 @@ const search = async (loadMore = false) => {
     }
 
     await nextTick()
-    
-    if (hasMore.value && !isScrollable()) {
-      console.log('⚠️ No hay scroll, cargando más automáticamente...');
+
+    if (hasMore.value && !isScrollable() && autoLoadCount < MAX_AUTO_LOADS) {
+      autoLoadCount++
+      console.log(` Página sigue sin scroll (auto-carga #${autoLoadCount}/${MAX_AUTO_LOADS})`);
+      
       setTimeout(() => {
-        if (hasMore.value && !isLoadingMore.value) {
+        if (hasMore.value && !isLoading.value && !isLoadingMore.value) {
           search(true)
         }
-      }, 500)
+      }, 400) 
     }
   } catch (err) {
-    console.error('❌ Error en búsqueda:', err);
-    errorMessage.value = err.message
+    console.error('❌ Error:', err)
+    errorMessage.value = err.message || 'Error al buscar canciones'
+  } finally {
+    isLoading.value = false
+    isLoadingMore.value = false
   }
-
-  isLoading.value = false
-  isLoadingMore.value = false
 }
 
 const isScrollable = () => {
   const scrollHeight = document.documentElement.scrollHeight
-  const clientHeight = document.documentElement.clientHeight
-  const isScrollable = scrollHeight > clientHeight
-  console.log('📏 Scroll:', { scrollHeight, clientHeight, isScrollable });
-  return isScrollable
+  const viewportHeight = window.innerHeight
+  return scrollHeight > viewportHeight + 60 
 }
 
 const loadMoreResults = () => {
-  if (isLoadingMore.value || !hasMore.value || isLoading.value) {
-    console.log('⏭️ No cargar más:', { 
-      isLoadingMore: isLoadingMore.value, 
-      hasMore: hasMore.value, 
-      isLoading: isLoading.value 
-    });
+  if (isLoadingMore.value) {
+    console.log('Ya está cargando')
     return
   }
   
-  console.log('📥 Cargando más resultados...');
+  if (!hasMore.value) {
+    console.log('No hay más resultados')
+    return
+  }
+  
+  if (isLoading.value) {
+    console.log(' Búsqueda inicial en proceso')
+    return
+  }
+  
+  if (results.value.length >= MAX_RESULTS) {
+    console.log(' Límite de 100 canciones alcanzado')
+    hasMore.value = false
+    return
+  }
+  
+  console.log(' Cargando más desde offset:', currentOffset.value)
   search(true)
 }
 
@@ -124,32 +154,23 @@ const formatDuration = (seconds) => {
 let scrollTimeout = null
 
 const handleScroll = () => {
-  if (scrollTimeout) {
-    clearTimeout(scrollTimeout)
-  }
+  if (scrollTimeout) clearTimeout(scrollTimeout)
 
   scrollTimeout = setTimeout(() => {
     const scrollTop = window.pageYOffset || document.documentElement.scrollTop
     const scrollHeight = document.documentElement.scrollHeight
-    const clientHeight = document.documentElement.clientHeight
+    const clientHeight = window.innerHeight
     
     const scrolled = scrollTop + clientHeight
     const threshold = scrollHeight * 0.80 
-    
-    console.log('📍 Scroll:', {
-      scrollTop: Math.round(scrollTop),
-      scrollHeight: Math.round(scrollHeight),
-      clientHeight: Math.round(clientHeight),
-      scrolled: Math.round(scrolled),
-      threshold: Math.round(threshold),
-      percentage: Math.round((scrolled / scrollHeight) * 100) + '%'
-    });
-    
-    if (scrolled >= threshold && !isLoadingMore.value && hasMore.value && !isLoading.value) {
-      console.log('🎯 Umbral alcanzado, cargando más...');
-      loadMoreResults()
+
+    if (scrolled >= threshold) {
+      if (!isLoadingMore.value && hasMore.value && !isLoading.value) {
+        console.log(`📍 Scroll detectado (${Math.round((scrolled / scrollHeight) * 100)}%) - cargando más`)
+        loadMoreResults()
+      }
     }
-  }, 150) 
+  }, 120)
 }
 
 watch(
@@ -164,18 +185,14 @@ watch(
 )
 
 onMounted(() => {
-  console.log('✅ Componente montado, añadiendo listener de scroll');
+  console.log(' Componente montado - Listeners activos')
   window.addEventListener('scroll', handleScroll, { passive: true })
-  document.addEventListener('scroll', handleScroll, { passive: true })
 })
 
 onUnmounted(() => {
-  console.log('🔚 Componente desmontado, removiendo listeners');
+  console.log(' Componente desmontado')
   window.removeEventListener('scroll', handleScroll)
-  document.removeEventListener('scroll', handleScroll)
-  if (scrollTimeout) {
-    clearTimeout(scrollTimeout)
-  }
+  if (scrollTimeout) clearTimeout(scrollTimeout)
 })
 </script>
 
@@ -188,7 +205,7 @@ onUnmounted(() => {
 
     <div v-if="isLoading && !results.length" class="loading">
       <Loader :size="40" class="spinner" />
-      <p>Buscando las mejores canciones...</p>
+      <p>Buscando...</p>
     </div>
 
     <div v-if="errorMessage" class="error-message">
@@ -198,21 +215,21 @@ onUnmounted(() => {
     <div class="results-grid" v-if="results.length">
       <div
         v-for="(item, index) in results"
-        :key="`${item.videoId || item.url}-${index}`"
+        :key="`${item.videoId}-${index}`"
         class="song-card"
-        :class="{ 'is-playing': playerStore.currentTrack?.videoId === (item.videoId || item.url?.split('v=')[1]?.split('&')[0]) }"
+        :class="{ 'is-playing': playerStore.currentTrack?.videoId === item.videoId }"
         @click="playTrack(item, index)"
       >
         <div class="thumbnail-wrapper">
           <img
             :src="item.thumbnail"
-            @error="e => { e.target.src = 'https://via.placeholder.com/120?text=🎵' }"
+            @error="e => { e.target.src = 'https://via.placeholder.com/120?text=' }"
             class="thumbnail"
             alt="Portada"
             loading="lazy"
           />
           <div class="play-overlay">
-            <Play v-if="!playerStore.currentTrack || playerStore.currentTrack?.videoId !== (item.videoId || item.url?.split('v=')[1]?.split('&')[0]) || !playerStore.isPlaying" 
+            <Play v-if="!playerStore.currentTrack || playerStore.currentTrack?.videoId !== item.videoId || !playerStore.isPlaying" 
                   :size="32" 
                   class="play-icon" 
             />
@@ -229,7 +246,7 @@ onUnmounted(() => {
           </div>
         </div>
 
-        <div class="play-indicator" v-if="playerStore.currentTrack?.videoId === (item.videoId || item.url?.split('v=')[1]?.split('&')[0])">
+        <div class="play-indicator" v-if="playerStore.currentTrack?.videoId === item.videoId">
           <div class="equalizer" v-if="playerStore.isPlaying">
             <span class="bar"></span>
             <span class="bar"></span>
@@ -241,17 +258,21 @@ onUnmounted(() => {
 
     <div v-if="isLoadingMore" class="loading-more">
       <Loader :size="28" class="spinner" />
-      <p>Cargando más... ({{ results.length }} canciones)</p>
+      <p>Cargando más... ({{ results.length }} / {{ MAX_RESULTS }})</p>
     </div>
 
     <div v-if="!hasMore && results.length && !isLoading && !isLoadingMore" class="no-more-results">
-      <p>¡Has llegado al final! ({{ results.length }} canciones)</p>
+      <p v-if="results.length >= MAX_RESULTS">
+        ¡Límite alcanzado! ({{ results.length }} canciones)
+      </p>
+      <p v-else>
+        ¡Todo cargado! ({{ results.length }} canciones)
+      </p>
     </div>
   </div>
 </template>
 
 <style scoped>
-/* <CHANGE> Base styles optimized for mobile first */
 .search-container {
   padding: 0.75rem;
   padding-bottom: 140px;
@@ -322,7 +343,6 @@ onUnmounted(() => {
   margin: 1rem 0;
 }
 
-/* <CHANGE> Improved grid system with better breakpoints */
 .results-grid {
   display: grid;
   grid-template-columns: 1fr;
@@ -330,7 +350,6 @@ onUnmounted(() => {
   width: 100%;
 }
 
-/* <CHANGE> Song card with better mobile optimization */
 .song-card {
   display: flex;
   align-items: center;
@@ -360,7 +379,6 @@ onUnmounted(() => {
   flex-shrink: 0;
 }
 
-/* <CHANGE> Responsive thumbnail sizes */
 .thumbnail {
   width: 60px;
   height: 60px;
@@ -391,7 +409,6 @@ onUnmounted(() => {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
 }
 
-/* <CHANGE> Better text overflow handling */
 .info {
   flex: 1;
   min-width: 0;
@@ -476,25 +493,10 @@ onUnmounted(() => {
   font-size: 0.875rem;
 }
 
-/* <CHANGE> Extra small devices (320px - 374px) */
 @media (max-width: 374px) {
   .search-container {
     padding: 0.5rem;
     padding-bottom: 130px;
-  }
-  
-  .search-header {
-    gap: 0.5rem;
-    margin-bottom: 1rem;
-  }
-  
-  .search-header h2 {
-    font-size: 1.125rem;
-  }
-  
-  .search-icon {
-    width: 20px;
-    height: 20px;
   }
   
   .thumbnail {
@@ -507,325 +509,41 @@ onUnmounted(() => {
     padding: 0.6rem;
     min-height: 64px;
   }
-  
-  .title {
-    font-size: 0.8125rem;
-  }
-  
-  .metadata {
-    font-size: 0.6875rem;
-    gap: 0.3rem;
-  }
-  
-  .metadata-icon {
-    width: 12px;
-    height: 12px;
-  }
 }
 
-/* <CHANGE> Small mobile devices (375px - 479px) */
-@media (min-width: 375px) and (max-width: 479px) {
-  .thumbnail {
-    width: 56px;
-    height: 56px;
-  }
-  
-  .title {
-    font-size: 0.85rem;
-  }
-}
-
-/* <CHANGE> Large mobile devices (480px - 639px) */
-@media (min-width: 480px) and (max-width: 639px) {
-  .search-container {
-    padding: 0.875rem;
-  }
-  
-  .results-grid {
-    gap: 0.75rem;
-  }
-  
-  .song-card {
-    padding: 0.75rem;
-    gap: 0.85rem;
-  }
-  
-  .thumbnail {
-    width: 64px;
-    height: 64px;
-  }
-  
-  .title {
-    font-size: 0.9rem;
-  }
-  
-  .metadata {
-    font-size: 0.8rem;
-  }
-}
-
-/* <CHANGE> Small tablets (640px - 767px) */
-@media (min-width: 640px) {
-  .search-container {
-    padding: 1rem;
-  }
-  
-  .search-header {
-    gap: 0.875rem;
-    margin-bottom: 1.5rem;
-  }
-  
-  .search-header h2 {
-    font-size: 1.5rem;
-  }
-  
-  .search-icon {
-    width: 26px;
-    height: 26px;
-  }
-  
-  .results-grid {
-    gap: 1rem;
-  }
-  
-  .song-card {
-    padding: 1rem;
-    gap: 1rem;
-  }
-  
-  .thumbnail {
-    width: 70px;
-    height: 70px;
-  }
-  
-  .title {
-    font-size: 1rem;
-  }
-  
-  .metadata {
-    font-size: 0.8125rem;
-    gap: 0.45rem;
-  }
-  
-  .metadata-icon {
-    width: 15px;
-    height: 15px;
-  }
-  
-  .equalizer {
-    height: 22px;
-    gap: 3px;
-  }
-  
-  .bar {
-    width: 3.5px;
-  }
-  
-  @keyframes equalize {
-    0%, 100% { height: 6px; }
-    50%      { height: 22px; }
-  }
-}
-
-/* <CHANGE> Tablets (768px - 1023px) - 2 columns */
 @media (min-width: 768px) {
-  .search-container {
-    padding: 1.25rem;
-  }
-  
   .results-grid {
     grid-template-columns: repeat(2, 1fr);
-    gap: 1rem;
-  }
-  
-  .search-header h2 {
-    font-size: 1.75rem;
-  }
-  
-  .song-card {
-    padding: 1rem;
     gap: 1rem;
   }
   
   .thumbnail {
     width: 76px;
     height: 76px;
-    border-radius: 8px;
-  }
-  
-  .play-overlay {
-    border-radius: 8px;
-  }
-  
-  .title {
-    font-size: 1rem;
-  }
-  
-  .metadata {
-    font-size: 0.875rem;
-    gap: 0.45rem;
-  }
-  
-  .metadata-icon {
-    width: 16px;
-    height: 16px;
-  }
-  
-  .equalizer {
-    height: 22px;
-    gap: 3px;
-  }
-  
-  .bar {
-    width: 3.5px;
-  }
-  
-  @keyframes equalize {
-    0%, 100% { height: 6px; }
-    50%      { height: 22px; }
   }
 }
 
-/* <CHANGE> Small laptops (1024px - 1279px) - 3 columns */
 @media (min-width: 1024px) {
-  .search-container {
-    padding: 1.5rem 2rem;
-    max-width: 1400px;
-    margin: 0 auto;
-  }
-  
   .results-grid {
     grid-template-columns: repeat(3, 1fr);
-    gap: 1.125rem;
-  }
-  
-  .search-header {
-    gap: 1rem;
-    margin-bottom: 1.75rem;
-  }
-  
-  .search-header h2 {
-    font-size: 2rem;
-  }
-  
-  .search-icon {
-    width: 28px;
-    height: 28px;
-  }
-  
-  .song-card {
-    padding: 1.125rem;
-    gap: 1.125rem;
-  }
-  
-  .thumbnail {
-    width: 84px;
-    height: 84px;
-  }
-  
-  .play-icon {
-    width: 36px;
-    height: 36px;
-  }
-  
-  .title {
-    font-size: 1.0625rem;
-  }
-  
-  .metadata {
-    font-size: 0.9rem;
-  }
-  
-  .no-more-results {
-    padding: 3rem 1rem;
-    font-size: 0.9375rem;
   }
 }
 
-/* <CHANGE> Large laptops and desktops (1280px - 1535px) - 4 columns */
 @media (min-width: 1280px) {
   .results-grid {
     grid-template-columns: repeat(4, 1fr);
-    gap: 1.25rem;
-  }
-  
-  .search-header h2 {
-    font-size: 2.25rem;
-  }
-  
-  .song-card {
-    padding: 1.25rem;
-    gap: 1.25rem;
-  }
-  
-  .thumbnail {
-    width: 90px;
-    height: 90px;
-  }
-  
-  .title {
-    font-size: 1.125rem;
-  }
-  
-  .metadata {
-    font-size: 0.9375rem;
-    gap: 0.5rem;
-  }
-  
-  .equalizer {
-    height: 24px;
-  }
-  
-  .bar {
-    width: 4px;
-  }
-  
-  @keyframes equalize {
-    0%, 100% { height: 7px; }
-    50%      { height: 24px; }
   }
 }
 
-/* <CHANGE> Extra large screens (1536px+) - 5 columns */
 @media (min-width: 1536px) {
-  .search-container {
-    padding: 2rem 2.5rem;
-    max-width: 1600px;
-  }
-  
   .results-grid {
     grid-template-columns: repeat(5, 1fr);
-    gap: 1.375rem;
-  }
-  
-  .search-header h2 {
-    font-size: 2.5rem;
-  }
-  
-  .thumbnail {
-    width: 96px;
-    height: 96px;
-  }
-  
-  .title {
-    font-size: 1.1875rem;
-  }
-  
-  .metadata {
-    font-size: 1rem;
   }
 }
 
-/* <CHANGE> Ultra-wide screens (1920px+) - 6 columns */
 @media (min-width: 1920px) {
-  .search-container {
-    max-width: 1800px;
-    padding: 2.5rem 3rem;
-  }
-  
   .results-grid {
     grid-template-columns: repeat(6, 1fr);
-    gap: 1.5rem;
   }
 }
 </style>
