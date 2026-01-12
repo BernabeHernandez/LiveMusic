@@ -26,11 +26,37 @@ const MAX_RESULTS = 100
 const MAX_AUTO_LOADS = 6
 const RETRY_DELAY = 1500 
 const MAX_RETRY_ATTEMPTS = 3 
+const PRELOAD_COUNT = 20
 
 let autoLoadCount = 0
 let retryTimeout = null
 let scrollTimeout = null
 let retryAttempts = 0
+
+const preloadAudioUrls = async (items) => {
+  const itemsToPreload = items.slice(0, PRELOAD_COUNT);
+  
+  console.log(`Pre-cargando URLs de audio para ${itemsToPreload.length} canciones...`);
+  
+  const preloadPromises = itemsToPreload.map(async (item) => {
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      await fetch(`${API_URL}/api/audio/${item.videoId}`, {
+        signal: controller.signal,
+        priority: 'low'
+      });
+      
+      clearTimeout(timeoutId);
+      console.log(`Pre-cargado: ${item.title.substring(0, 30)}...`);
+    } catch (err) {
+    }
+  });
+  
+  await Promise.allSettled(preloadPromises);
+  console.log(`Pre-carga completada`);
+};
 
 const search = async (loadMore = false) => {
   if (!query.value.trim()) return
@@ -48,7 +74,7 @@ const search = async (loadMore = false) => {
     retryAttempts = 0
     if (retryTimeout) clearTimeout(retryTimeout)
   } else {
-    console.log(' Cargando más (offset:', currentOffset.value, ')');
+    console.log('Cargando más (offset:', currentOffset.value, ')');
     isLoadingMore.value = true
   }
   
@@ -70,16 +96,16 @@ const search = async (loadMore = false) => {
     const items = data.items || []
     
     if (loadMore && items.length === 0 && data.hasMore) {
-      console.log('⚠️  Sin items pero backend dice que hay más. Expansion en progreso:', data.expansionInProgress);
+      console.log('Sin items pero backend dice que hay más. Expansion en progreso:', data.expansionInProgress);
       
       if (data.expansionInProgress && retryAttempts < MAX_RETRY_ATTEMPTS) {
         expansionInProgress.value = true;
         retryAttempts++;
-        console.log(`🔄 Expansión en progreso, reintentando (intento ${retryAttempts}/${MAX_RETRY_ATTEMPTS}) en ${RETRY_DELAY}ms`);
+        console.log(`Expansión en progreso, reintentando (intento ${retryAttempts}/${MAX_RETRY_ATTEMPTS}) en ${RETRY_DELAY}ms`);
         
         retryTimeout = setTimeout(() => {
           if (hasMore.value && !isLoading.value && !isLoadingMore.value) {
-            console.log('🔄 Reintentando carga...');
+            console.log('Reintentando carga...');
             search(true);
           }
         }, RETRY_DELAY);
@@ -87,14 +113,14 @@ const search = async (loadMore = false) => {
         isLoadingMore.value = false;
         return; 
       } else if (retryAttempts >= MAX_RETRY_ATTEMPTS) {
-        console.log('✋ Máximo de reintentos alcanzado');
+        console.log('Máximo de reintentos alcanzado');
         hasMore.value = false;
         expansionInProgress.value = false;
         isLoadingMore.value = false;
         return;
       }
     } else if (loadMore && items.length === 0 && !data.hasMore) {
-      console.log('📭 No hay más resultados disponibles');
+      console.log(' No hay más resultados disponibles');
       hasMore.value = false;
       isLoadingMore.value = false;
       return;
@@ -104,6 +130,9 @@ const search = async (loadMore = false) => {
       results.value = [...results.value, ...items]
     } else {
       results.value = items
+      if (items.length > 0) {
+        preloadAudioUrls(items);
+      }
     }
 
     totalAvailable.value = data.total || 0
@@ -134,7 +163,7 @@ const search = async (loadMore = false) => {
 
     if (!loadMore && hasMore.value && !isScrollable() && autoLoadCount < MAX_AUTO_LOADS) {
       autoLoadCount++
-      console.log(` Página sigue sin scroll (auto-carga #${autoLoadCount}/${MAX_AUTO_LOADS})`);
+      console.log(`Página sigue sin scroll (auto-carga #${autoLoadCount}/${MAX_AUTO_LOADS})`);
       
       setTimeout(() => {
         if (hasMore.value && !isLoading.value && !isLoadingMore.value && !expansionInProgress.value) {
@@ -143,7 +172,7 @@ const search = async (loadMore = false) => {
       }, 400) 
     }
   } catch (err) {
-    console.error('❌ Error:', err)
+    console.error('Error:', err)
     errorMessage.value = err.message || 'Error al buscar canciones'
   } finally {
     isLoading.value = false
@@ -169,17 +198,17 @@ const loadMoreResults = () => {
   }
   
   if (isLoading.value) {
-    console.log(' Búsqueda inicial en proceso')
+    console.log('Búsqueda inicial en proceso')
     return
   }
   
   if (results.value.length >= MAX_RESULTS) {
-    console.log(' Límite de 100 canciones alcanzado')
+    console.log('Límite de 100 canciones alcanzado')
     hasMore.value = false
     return
   }
   
-  console.log(' Cargando más desde offset:', currentOffset.value)
+  console.log('Cargando más desde offset:', currentOffset.value)
   search(true)
 }
 
@@ -192,6 +221,11 @@ const playTrack = (item, index) => {
   }))
 
   playerStore.setQueue(tracksQueue, index)
+  
+  const nextItems = results.value.slice(index + 1, index + 1 + PRELOAD_COUNT);
+  if (nextItems.length > 0) {
+    preloadAudioUrls(nextItems);
+  }
 }
 
 const formatDuration = (seconds) => {
@@ -218,7 +252,7 @@ const handleScroll = () => {
 
     if (scrolled >= threshold) {
       if (!isLoadingMore.value && hasMore.value && !isLoading.value && !expansionInProgress.value) {
-        console.log(`📍 Scroll detectado (${Math.round((scrolled / scrollHeight) * 100)}%) - cargando más`)
+        console.log(`Scroll detectado (${Math.round((scrolled / scrollHeight) * 100)}%) - cargando más`)
         loadMoreResults()
       }
     }
@@ -243,12 +277,12 @@ watch(
 )
 
 onMounted(() => {
-  console.log(' Componente montado - Listeners activos')
+  console.log('Componente montado - Listeners activos')
   window.addEventListener('scroll', handleScroll, { passive: true })
 })
 
 onUnmounted(() => {
-  console.log(' Componente desmontado')
+  console.log('Componente desmontado')
   window.removeEventListener('scroll', handleScroll)
   if (scrollTimeout) clearTimeout(scrollTimeout)
   if (retryTimeout) clearTimeout(retryTimeout)
