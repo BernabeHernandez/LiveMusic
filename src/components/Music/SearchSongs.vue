@@ -7,7 +7,7 @@ import { Search, Music, Play, Pause, Loader } from 'lucide-vue-next'
 const route = useRoute()
 const playerStore = usePlayerStore()
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const API_URL = import.meta.env.VITE_API_URL || 'https://music-qyo5.onrender.com'
 
 const query = ref('')
 const results = ref([])
