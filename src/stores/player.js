@@ -17,7 +17,7 @@ export const usePlayerStore = defineStore('player', {
     isShuffleEnabled: false,
     playedIndices: [],
     durationFixed: false,
-    isRepeatEnabled: false // Nueva opción para repetir una canción
+    isRepeatEnabled: false 
   }),
 
   actions: {
@@ -36,22 +36,21 @@ export const usePlayerStore = defineStore('player', {
           }
           
           if (this.currentTime > this.duration && this.duration > 0) {
-            console.warn('⚠️ Duración incorrecta detectada. Forzando corrección...');
+            console.warn('Duración incorrecta detectada. Forzando corrección...');
             this.duration = this.currentTime;
           }
           
           this.progress = this.duration > 0 ? (this.currentTime / this.duration) * 100 : 0;
           
-          // Detectar fin de canción usando duración del backend
           if (this.backendDuration > 0 && this.currentTime >= this.backendDuration - 0.5) {
-            console.log('✅ Canción terminada según duración del backend');
+            console.log('Canción terminada según duración del backend');
             this.handleTrackEnd();
           }
         });
 
         this.audio.addEventListener('loadedmetadata', () => {
-          console.log('📊 loadedmetadata - audio.duration:', this.audio.duration);
-          console.log('📊 backendDuration guardada:', this.backendDuration);
+          console.log('loadedmetadata - audio.duration:', this.audio.duration);
+          console.log('backendDuration guardada:', this.backendDuration);
           
           if (this.audio.duration && !isNaN(this.audio.duration) && isFinite(this.audio.duration)) {
             const audioDuration = this.audio.duration;
@@ -59,12 +58,12 @@ export const usePlayerStore = defineStore('player', {
             if (this.backendDuration > 0) {
               const diff = Math.abs(audioDuration - this.backendDuration);
               if (diff > 10) { 
-                console.warn('⚠️ Duración discrepante:', {
+                console.warn('Duración discrepante:', {
                   audio: audioDuration,
                   backend: this.backendDuration,
                   diferencia: diff
                 });
-                console.log('✅ Usando duración del backend');
+                console.log('Usando duración del backend');
                 this.duration = this.backendDuration;
               } else {
                 this.duration = audioDuration;
@@ -76,37 +75,32 @@ export const usePlayerStore = defineStore('player', {
         });
 
         this.audio.addEventListener('ended', () => {
-          console.log('🎵 Evento ended disparado');
+          console.log('Evento ended disparado');
           this.handleTrackEnd();
         });
 
         this.audio.addEventListener('error', (e) => {
-          console.error('❌ Error al reproducir audio:', e);
+          console.error('Error al reproducir audio:', e);
           alert('Error al reproducir esta canción. Puede estar restringida o no disponible.');
-          // Si hay error, intentar con la siguiente
           this.nextTrack();
         });
 
         this.audio.addEventListener('canplay', () => {
-          console.log('✅ Audio listo para reproducir');
-          console.log('📊 Duración final:', this.duration);
+          console.log('Audio listo para reproducir');
+          console.log('Duración final:', this.duration);
         });
       }
     },
 
-    // Nuevo método para manejar el fin de una canción
     handleTrackEnd() {
       if (this.isRepeatEnabled) {
-        // Si repeat está activado, volver a reproducir la misma canción
         this.audio.currentTime = 0;
         this.audio.play();
       } else {
-        // Si no, pasar a la siguiente
         this.nextTrack();
       }
     },
 
-    // Nuevo método para agregar toda una lista a la cola
     setQueue(tracks, startIndex = 0) {
       this.queue = tracks;
       this.currentIndex = startIndex;
@@ -116,12 +110,11 @@ export const usePlayerStore = defineStore('player', {
       }
     },
 
-    // Nuevo método para agregar una canción a la cola sin reproducirla
     addToQueue(track) {
       const exists = this.queue.findIndex(t => t.videoId === track.videoId);
       if (exists === -1) {
         this.queue.push(track);
-        console.log('➕ Canción agregada a la cola:', track.title);
+        console.log('Canción agregada a la cola:', track.title);
       }
     },
 
@@ -133,12 +126,10 @@ export const usePlayerStore = defineStore('player', {
         videoId
       };
 
-      // Actualizar el índice actual si la canción ya está en la cola
       const existingIndex = this.queue.findIndex(t => t.videoId === videoId);
       if (existingIndex !== -1) {
         this.currentIndex = existingIndex;
       } else {
-        // Si no está en la cola, agregarla
         this.queue.push(this.currentTrack);
         this.currentIndex = this.queue.length - 1;
       }
@@ -150,22 +141,20 @@ export const usePlayerStore = defineStore('player', {
         const data = await response.json();
 
         if (data.audioUrl) {
-          // Resetear duración y progreso
           this.duration = 0;
           this.backendDuration = data.duration || 0; 
           this.currentTime = 0;
           this.progress = 0;
           this.durationFixed = false;
           
-          console.log('📊 Duración del backend:', this.backendDuration, 'segundos');
-          console.log('📊 URL del audio:', data.audioUrl.substring(0, 50) + '...');
+          console.log('Duración del backend:', this.backendDuration, 'segundos');
+          console.log('URL del audio:', data.audioUrl.substring(0, 50) + '...');
           
           this.audio.src = data.audioUrl;
           
           await this.audio.play();
           this.isPlaying = true;
 
-          // Obtener metadata completa
           const infoRes = await fetch(`${API_URL}/api/video-info/${videoId}`);
           if (infoRes.ok) {
             const info = await infoRes.json();
@@ -178,7 +167,7 @@ export const usePlayerStore = defineStore('player', {
           this.updateMediaSession();
         }
       } catch (error) {
-        console.error('❌ Error cargando audio:', error);
+        console.error('Error cargando audio:', error);
         alert('No se pudo reproducir la canción');
       }
     },
@@ -199,7 +188,7 @@ export const usePlayerStore = defineStore('player', {
       const maxDuration = this.backendDuration > 0 ? this.backendDuration : this.duration;
       const time = (percent / 100) * maxDuration;
       
-      console.log('⏭️ Seeking a:', time, 'de', maxDuration);
+      console.log('Seeking a:', time, 'de', maxDuration);
       
       if (time <= maxDuration) {
         this.audio.currentTime = time;
@@ -222,13 +211,12 @@ export const usePlayerStore = defineStore('player', {
 
     nextTrack() {
       if (this.queue.length === 0) {
-        console.warn('⚠️ No hay canciones en la cola');
+        console.warn('No hay canciones en la cola');
         return;
       }
 
-      // Si solo hay una canción y no está shuffle, no hacer nada
       if (this.queue.length === 1 && !this.isShuffleEnabled) {
-        console.log('ℹ️ Solo hay una canción en la cola');
+        console.log('Solo hay una canción en la cola');
         this.audio.pause();
         this.isPlaying = false;
         return;
@@ -237,7 +225,6 @@ export const usePlayerStore = defineStore('player', {
       let nextIndex;
 
       if (this.isShuffleEnabled) {
-        // Modo shuffle
         if (this.playedIndices.length >= this.queue.length) {
           this.playedIndices = [];
         }
@@ -248,12 +235,9 @@ export const usePlayerStore = defineStore('player', {
         
         this.playedIndices.push(nextIndex);
       } else {
-        // Modo normal - avanzar al siguiente
         nextIndex = this.currentIndex + 1;
-        
-        // Si llegamos al final, detener (no repetir desde el inicio)
         if (nextIndex >= this.queue.length) {
-          console.log('ℹ️ Llegaste al final de la cola');
+          console.log('Llegaste al final de la cola');
           this.audio.pause();
           this.isPlaying = false;
           return;
@@ -262,12 +246,11 @@ export const usePlayerStore = defineStore('player', {
 
       this.currentIndex = nextIndex;
       const next = this.queue[this.currentIndex];
-      console.log('⏭️ Siguiente canción:', next.title);
+      console.log('Siguiente canción:', next.title);
       this.playTrack(next.videoId, next);
     },
 
     previousTrack() {
-      // Si la canción lleva más de 3 segundos, reiniciarla
       if (this.currentTime > 3) {
         this.audio.currentTime = 0;
         return;
@@ -278,16 +261,13 @@ export const usePlayerStore = defineStore('player', {
       let prevIndex;
 
       if (this.isShuffleEnabled && this.playedIndices.length > 1) {
-        // En shuffle, volver al anterior de la lista reproducida
         this.playedIndices.pop();
         prevIndex = this.playedIndices[this.playedIndices.length - 1];
       } else {
-        // Modo normal - retroceder
         prevIndex = this.currentIndex - 1;
         
-        // Si estamos al inicio, no hacer nada
         if (prevIndex < 0) {
-          console.log('ℹ️ Ya estás en la primera canción');
+          console.log('Ya estás en la primera canción');
           this.audio.currentTime = 0;
           return;
         }
@@ -295,7 +275,7 @@ export const usePlayerStore = defineStore('player', {
 
       this.currentIndex = prevIndex;
       const prev = this.queue[this.currentIndex];
-      console.log('⏮️ Canción anterior:', prev.title);
+      console.log('Canción anterior:', prev.title);
       this.playTrack(prev.videoId, prev);
     },
 
