@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-import { Menu, X } from 'lucide-vue-next'
+import { Menu } from 'lucide-vue-next'
 
 const router = useRouter()
 const query = ref('')
@@ -42,7 +42,9 @@ const toggleSidebar = () => {
         class="search-input"
       />
 
-      <router-link to="/library" class="library-link">Tu biblioteca</router-link>
+      <router-link to="/library" class="library-link">
+        Tu biblioteca
+      </router-link>
     </nav>
   </header>
 </template>
@@ -50,11 +52,11 @@ const toggleSidebar = () => {
 <style scoped>
 .app-header {
   height: 70px;
-  background: rgba(0, 0, 0, 0.4);
+  background: #000;
   backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.75rem;
   padding: 0 1rem;
   position: sticky;
   top: 0;
@@ -79,14 +81,11 @@ const toggleSidebar = () => {
   background: rgba(255, 255, 255, 0.1);
 }
 
-.hamburger-btn:active {
-  background: rgba(255, 255, 255, 0.15);
-}
-
 .logo {
   font-size: 1.4rem;
   font-weight: bold;
   flex-shrink: 0;
+  color: white;
 }
 
 .header-nav {
@@ -95,6 +94,7 @@ const toggleSidebar = () => {
   gap: 1rem;
   flex: 1;
   justify-content: flex-end;
+  min-width: 0; 
 }
 
 .header-nav a {
@@ -110,14 +110,15 @@ const toggleSidebar = () => {
 }
 
 .search-input {
-  padding: 8px 14px;
-  border-radius: 20px;
+  width: 100%;
+  max-width: 100%;
+  padding: 12px 18px;
+  border-radius: 999px;
   border: none;
   outline: none;
   background: rgba(255,255,255,0.15);
   color: white;
-  width: 160px;
-  font-size: 0.9rem;
+  font-size: 1rem;
 }
 
 .search-input::placeholder {
@@ -138,8 +139,7 @@ const toggleSidebar = () => {
   }
 
   .search-input {
-    width: 220px;
-    font-size: 1rem;
+    width: 260px;
   }
 
   .header-nav {
@@ -156,20 +156,8 @@ const toggleSidebar = () => {
     font-size: 1.2rem;
   }
 
-  .search-input {
-    width: 120px;
-    font-size: 0.85rem;
-    padding: 6px 10px;
-  }
-
   .library-link {
     display: none;
-  }
-}
-
-@media (min-width: 480px) and (max-width: 767px) {
-  .search-input {
-    width: 140px;
   }
 }
 </style>

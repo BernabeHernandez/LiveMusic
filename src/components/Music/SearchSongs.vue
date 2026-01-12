@@ -20,12 +20,12 @@ const totalAvailable = ref(0)
 const expansionInProgress = ref(false)
 const isExpanded = ref(false)
 
-const INITIAL_LIMIT = 30  // Para recibir 30 resultados iniciales
-const LOAD_MORE_LIMIT = 10 // Cargar de 10 en 10
+const INITIAL_LIMIT = 30  
+const LOAD_MORE_LIMIT = 10
 const MAX_RESULTS = 100
 const MAX_AUTO_LOADS = 6
-const RETRY_DELAY = 1500 // Delay para reintentar
-const MAX_RETRY_ATTEMPTS = 3 // Máximo de reintentos
+const RETRY_DELAY = 1500 
+const MAX_RETRY_ATTEMPTS = 3 
 
 let autoLoadCount = 0
 let retryTimeout = null
@@ -69,12 +69,10 @@ const search = async (loadMore = false) => {
 
     const items = data.items || []
     
-    // Si estamos cargando más y no hay items pero el backend dice que hay más
     if (loadMore && items.length === 0 && data.hasMore) {
       console.log('⚠️  Sin items pero backend dice que hay más. Expansion en progreso:', data.expansionInProgress);
       
       if (data.expansionInProgress && retryAttempts < MAX_RETRY_ATTEMPTS) {
-        // Si la expansión está en progreso, esperar y reintentar
         expansionInProgress.value = true;
         retryAttempts++;
         console.log(`🔄 Expansión en progreso, reintentando (intento ${retryAttempts}/${MAX_RETRY_ATTEMPTS}) en ${RETRY_DELAY}ms`);
@@ -87,9 +85,8 @@ const search = async (loadMore = false) => {
         }, RETRY_DELAY);
         
         isLoadingMore.value = false;
-        return; // Salir sin actualizar resultados
+        return; 
       } else if (retryAttempts >= MAX_RETRY_ATTEMPTS) {
-        // Si superamos los intentos máximos, marcar como sin más resultados
         console.log('✋ Máximo de reintentos alcanzado');
         hasMore.value = false;
         expansionInProgress.value = false;
@@ -97,7 +94,6 @@ const search = async (loadMore = false) => {
         return;
       }
     } else if (loadMore && items.length === 0 && !data.hasMore) {
-      // Si no hay items y el backend dice que no hay más
       console.log('📭 No hay más resultados disponibles');
       hasMore.value = false;
       isLoadingMore.value = false;
@@ -116,7 +112,6 @@ const search = async (loadMore = false) => {
     isExpanded.value = data.isExpanded || false
     currentOffset.value += items.length
     
-    // Reiniciar contador de reintentos si recibimos items
     if (items.length > 0) {
       retryAttempts = 0;
     }
@@ -137,7 +132,6 @@ const search = async (loadMore = false) => {
 
     await nextTick()
 
-    // Auto-carga solo si es búsqueda inicial y no hay scroll
     if (!loadMore && hasMore.value && !isScrollable() && autoLoadCount < MAX_AUTO_LOADS) {
       autoLoadCount++
       console.log(` Página sigue sin scroll (auto-carga #${autoLoadCount}/${MAX_AUTO_LOADS})`);

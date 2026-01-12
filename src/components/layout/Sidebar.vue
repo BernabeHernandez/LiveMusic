@@ -16,7 +16,6 @@ const closeSidebar = () => {
 </script>
 
 <template>
-  <!-- Overlay para cerrar sidebar al hacer click fuera -->
   <div 
     v-if="isOpen" 
     class="sidebar-overlay"
@@ -24,7 +23,6 @@ const closeSidebar = () => {
   ></div>
 
   <aside class="sidebar" :class="{ 'sidebar-open': isOpen }">
-    <!-- Botón de cerrar solo visible en móviles -->
     <div class="sidebar-header">
       <h2 class="sidebar-title">Menú</h2>
       <button 
@@ -51,7 +49,6 @@ const closeSidebar = () => {
 </template>
 
 <style scoped>
-/* Overlay para móviles */
 .sidebar-overlay {
   display: none;
   position: fixed;
@@ -72,7 +69,6 @@ const closeSidebar = () => {
   transition: transform 0.3s ease;
 }
 
-/* Header del sidebar con botón de cerrar */
 .sidebar-header {
   display: none;
   justify-content: space-between;
@@ -128,7 +124,6 @@ const closeSidebar = () => {
   background: rgba(255, 255, 255, 0.1);
 }
 
-/* Estilos responsivos para móviles */
 @media (max-width: 767px) {
   .sidebar-overlay.sidebar-open {
     display: block;
@@ -159,11 +154,14 @@ const closeSidebar = () => {
   }
 }
 
-/* Tablets y desktop - comportamiento normal */
 @media (min-width: 768px) {
   .sidebar {
     position: relative;
     transform: none !important;
+    width: 260px;     
+    min-width: 260px;  
+    height: 100vh;
+    border-right: 1px solid rgba(255,255,255,0.08);
   }
 
   .sidebar-header {
@@ -174,4 +172,5 @@ const closeSidebar = () => {
     display: none !important;
   }
 }
+
 </style>
