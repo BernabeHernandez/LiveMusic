@@ -36,7 +36,6 @@ const closeSidebar = () => {
 </script>
 
 <style scoped>
-/* Layout base optimizado para móviles primero */
 .app-layout {
   height: 100dvh;
   min-height: -webkit-fill-available;
@@ -49,7 +48,6 @@ const closeSidebar = () => {
   position: relative;
 }
 
-/* Main container con flexbox para mejor control */
 .main-container {
   display: flex;
   flex: 1;
@@ -57,7 +55,6 @@ const closeSidebar = () => {
   min-height: 0;
 }
 
-/* Sidebar oculto por defecto en móviles */
 .sidebar {
   display: none;
   width: 240px;
@@ -66,7 +63,6 @@ const closeSidebar = () => {
   -webkit-overflow-scrolling: touch;
 }
 
-/* Content area completamente responsivo */
 .content-area {
   flex: 1;
   overflow-y: auto;
@@ -74,11 +70,9 @@ const closeSidebar = () => {
   -webkit-overflow-scrolling: touch;
   padding: 0.75rem;
   background: linear-gradient(to bottom, #121212, #0f0f0f);
-  /* Espacio para el player fijo abajo */
   padding-bottom: 110px;
 }
 
-/* Music Player fijo en la parte inferior */
 .music-player {
   position: fixed;
   bottom: 0;
@@ -94,7 +88,6 @@ const closeSidebar = () => {
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Móviles pequeños (320px - 479px) */
 @media (min-width: 320px) and (max-width: 479px) {
   .content-area {
     padding: 0.5rem 0.75rem;
@@ -102,7 +95,6 @@ const closeSidebar = () => {
   }
 }
 
-/* Móviles medianos (480px - 767px) */
 @media (min-width: 480px) and (max-width: 767px) {
   .content-area {
     padding: 0.75rem 1rem;
@@ -110,7 +102,6 @@ const closeSidebar = () => {
   }
 }
 
-/* Tablets (768px - 1023px) */
 @media (min-width: 768px) {
   .sidebar {
     display: block;
@@ -127,7 +118,6 @@ const closeSidebar = () => {
   }
 }
 
-/* Laptops pequeños (1024px - 1279px) */
 @media (min-width: 1024px) {
   .sidebar {
     width: 240px;
@@ -143,7 +133,6 @@ const closeSidebar = () => {
   }
 }
 
-/* Desktops (1280px+) */
 @media (min-width: 1280px) {
   .sidebar {
     width: 260px;
@@ -159,7 +148,6 @@ const closeSidebar = () => {
   }
 }
 
-/* Pantallas muy grandes (1536px+) */
 @media (min-width: 1536px) {
   .sidebar {
     width: 280px;
@@ -175,14 +163,12 @@ const closeSidebar = () => {
   }
 }
 
-/* Optimizaciones para iOS Safari */
 @supports (-webkit-touch-callout: none) {
   .app-layout {
     height: -webkit-fill-available;
   }
 }
 
-/* Mejora del scroll en móviles */
 .content-area::-webkit-scrollbar {
   width: 8px;
 }
@@ -200,7 +186,6 @@ const closeSidebar = () => {
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* Ocultar scrollbar en Firefox móvil */
 @media (max-width: 767px) {
   .content-area {
     scrollbar-width: thin;
