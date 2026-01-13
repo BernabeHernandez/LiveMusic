@@ -97,7 +97,7 @@ const formatDate = (dateString) => {
         :class="{ 
           'playing': playerStore.currentTrack?.videoId === track.videoId && playerStore.isPlaying 
         }"
-        @dblclick="playTrack(track, index)"
+        @click="playTrack(track, index)"
       >
         <div class="col-number">
           <span class="track-number">{{ index + 1 }}</span>

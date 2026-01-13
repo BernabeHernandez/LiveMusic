@@ -7,7 +7,6 @@ import { Play } from 'lucide-vue-next'
 const playerStore = usePlayerStore()
 const searchResults = ref([])
 
-// Ejemplo de uso en resultados de búsqueda
 const playTrack = (track, index) => {
   playerStore.setQueue(searchResults.value, index)
 }
@@ -32,16 +31,12 @@ const addToQueue = (track) => {
       </div>
 
       <div class="track-actions">
-        <!-- Botón de reproducir -->
         <button @click="playTrack(track, index)" class="action-button play-btn">
           <Play :size="20" />
         </button>
 
-        <!-- Botón de favoritos - Componente reutilizable -->
         <FavoriteButton :track="track" :size="20" />
 
-        <!-- O también puedes usar con label -->
-        <!-- <FavoriteButton :track="track" :size="20" :show-label="true" /> -->
       </div>
     </div>
   </div>

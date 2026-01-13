@@ -16,11 +16,9 @@ import {
 const router = useRouter()
 const playerStore = usePlayerStore()
 
-// Estados
 const currentTime = ref(new Date().getHours())
 const isLoading = ref(true)
 
-// Sugerencias de búsqueda dinámicas
 const trendingSearches = ref([
   { query: 'Bad Bunny', icon: Flame, color: '#ff6b6b' },
   { query: 'The Weeknd', icon: TrendingUp, color: '#4ecdc4' },
@@ -30,7 +28,6 @@ const trendingSearches = ref([
   { query: 'Ed Sheeran', icon: Heart, color: '#f472b6' }
 ])
 
-// Categorías de géneros musicales
 const genres = ref([
   { 
     name: 'Pop', 
@@ -74,7 +71,6 @@ const genres = ref([
   }
 ])
 
-// Playlists sugeridas
 const suggestedPlaylists = ref([
   {
     title: 'Top Hits 2024',
@@ -102,7 +98,6 @@ const suggestedPlaylists = ref([
   }
 ])
 
-// Computed
 const greeting = computed(() => {
   const hour = currentTime.value
   if (hour < 12) return '¡Buenos días!'
@@ -118,7 +113,6 @@ const hasFavorites = computed(() => {
   return playerStore.favorites.length > 0
 })
 
-// Métodos
 const searchMusic = (query) => {
   router.push({ path: '/search', query: { q: query } })
 }
@@ -166,7 +160,6 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- Favorites Section -->
     <section v-if="hasFavorites" class="section favorites-section">
       <div class="section-header">
         <h2 class="section-title">
@@ -202,7 +195,6 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- Suggested Playlists -->
     <section class="section playlists-section">
       <div class="section-header">
         <h2 class="section-title">
@@ -229,7 +221,6 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- Genres Section -->
     <section class="section genres-section">
       <div class="section-header">
         <h2 class="section-title">
@@ -254,7 +245,6 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- Trending Section -->
     <section class="section trending-section">
       <div class="section-header">
         <h2 class="section-title">
@@ -288,7 +278,6 @@ onMounted(() => {
       </div>
     </section>
 
-    <!-- Empty State for Favorites -->
     <section v-if="!hasFavorites" class="section empty-favorites">
       <div class="empty-state">
         <div class="empty-icon">
@@ -325,7 +314,6 @@ onMounted(() => {
   }
 }
 
-/* Hero Section */
 .hero-section {
   margin-bottom: 48px;
 }
