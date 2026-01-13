@@ -33,13 +33,11 @@ let retryTimeout = null
 let scrollTimeout = null
 let retryAttempts = 0
 
-// Toggle favorito con prevención de propagación
 const toggleFavorite = (event, track) => {
-  event.stopPropagation() // Prevenir que se reproduzca la canción
+  event.stopPropagation() 
   playerStore.toggleFavorite(track)
 }
 
-// Verificar si una canción es favorita
 const isFavorite = (videoId) => {
   return playerStore.isFavorite(videoId)
 }
@@ -346,7 +344,6 @@ onUnmounted(() => {
             <Pause v-else :size="32" class="play-icon" />
           </div>
           
-          <!-- Botón de favorito en la esquina del thumbnail -->
           <button
             class="favorite-badge"
             :class="{ 'is-favorite': isFavorite(item.videoId) }"
