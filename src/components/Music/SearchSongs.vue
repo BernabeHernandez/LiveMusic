@@ -26,7 +26,7 @@ const MAX_RESULTS = 100
 const MAX_AUTO_LOADS = 6
 const RETRY_DELAY = 1500 
 const MAX_RETRY_ATTEMPTS = 3 
-const PRELOAD_COUNT = 20
+const PRELOAD_COUNT = 3
 
 let autoLoadCount = 0
 let retryTimeout = null
