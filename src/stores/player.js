@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia';
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://music-qyo5.onrender.com'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 export const usePlayerStore = defineStore('player', {
   state: () => ({

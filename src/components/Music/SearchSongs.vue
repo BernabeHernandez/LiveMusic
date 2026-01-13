@@ -7,7 +7,7 @@ import { Search, Music, Play, Pause, Loader } from 'lucide-vue-next'
 const route = useRoute()
 const playerStore = usePlayerStore()
 
-const API_URL = import.meta.env.VITE_API_URL || 'https://music-qyo5.onrender.com'
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 const query = ref('')
 const results = ref([])
@@ -26,7 +26,7 @@ const MAX_RESULTS = 100
 const MAX_AUTO_LOADS = 6
 const RETRY_DELAY = 1500 
 const MAX_RETRY_ATTEMPTS = 3 
-const PRELOAD_COUNT = 3
+const PRELOAD_COUNT = 20
 
 let autoLoadCount = 0
 let retryTimeout = null
