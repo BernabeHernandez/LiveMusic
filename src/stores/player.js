@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+const FAVORITES_STORAGE_KEY = 'music_player_favorites'
 
 export const usePlayerStore = defineStore('player', {
   state: () => ({
@@ -17,10 +18,99 @@ export const usePlayerStore = defineStore('player', {
     isShuffleEnabled: false,
     playedIndices: [],
     durationFixed: false,
-    isRepeatEnabled: false 
+    isRepeatEnabled: false,
+    favorites: [] 
   }),
 
+  getters: {
+
+    isFavorite: (state) => (videoId) => {
+      return state.favorites.some(fav => fav.videoId === videoId);
+    },
+    favoritesCount: (state) => state.favorites.length,
+    isCurrentTrackFavorite: (state) => {
+      if (!state.currentTrack) return false;
+      return state.favorites.some(fav => fav.videoId === state.currentTrack.videoId);
+    }
+  },
+
   actions: {
+    initStore() {
+      this.loadFavorites();
+    },
+
+    loadFavorites() {
+      try {
+        const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
+        if (stored) {
+          this.favorites = JSON.parse(stored);
+          console.log(`✅ Cargados ${this.favorites.length} favoritos`);
+        }
+      } catch (error) {
+        console.error('Error cargando favoritos:', error);
+        this.favorites = [];
+      }
+    },
+
+    saveFavorites() {
+      try {
+        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(this.favorites));
+        console.log(`💾 Guardados ${this.favorites.length} favoritos`);
+      } catch (error) {
+        console.error('Error guardando favoritos:', error);
+      }
+    },
+
+    toggleFavorite(track) {
+      const index = this.favorites.findIndex(fav => fav.videoId === track.videoId);
+      
+      if (index !== -1) {
+        this.favorites.splice(index, 1);
+        console.log('💔 Quitado de favoritos:', track.title);
+      } else {
+        const favoriteTrack = {
+          videoId: track.videoId,
+          title: track.title,
+          artist: track.artist || 'YouTube',
+          thumbnail: track.thumbnail || `https://i.ytimg.com/vi/${track.videoId}/mqdefault.jpg`,
+          duration: track.duration || 0,
+          addedAt: new Date().toISOString() 
+        };
+        
+        this.favorites.unshift(favoriteTrack); 
+        console.log('❤️ Agregado a favoritos:', track.title);
+      }
+      
+      this.saveFavorites();
+    },
+
+    removeFavorite(videoId) {
+      const index = this.favorites.findIndex(fav => fav.videoId === videoId);
+      if (index !== -1) {
+        const removed = this.favorites.splice(index, 1)[0];
+        this.saveFavorites();
+        console.log('💔 Quitado de favoritos:', removed.title);
+        return true;
+      }
+      return false;
+    },
+
+    clearFavorites() {
+      this.favorites = [];
+      this.saveFavorites();
+      console.log('🗑️ Favoritos limpiados');
+    },
+
+    playFavorites(startIndex = 0) {
+      if (this.favorites.length === 0) {
+        console.warn('No hay favoritos para reproducir');
+        return;
+      }
+      
+      this.setQueue([...this.favorites], startIndex);
+      console.log(`🎵 Reproduciendo favoritos (${this.favorites.length} canciones)`);
+    },
+
     initAudioPlayer(audioElement) {
       this.audio = audioElement;
       if (this.audio) {
@@ -123,7 +213,8 @@ export const usePlayerStore = defineStore('player', {
         title: trackInfo.title || 'Cargando...',
         artist: trackInfo.artist || 'YouTube',
         thumbnail: trackInfo.thumbnail || `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
-        videoId
+        videoId,
+        duration: trackInfo.duration || 0
       };
 
       const existingIndex = this.queue.findIndex(t => t.videoId === videoId);
@@ -161,6 +252,7 @@ export const usePlayerStore = defineStore('player', {
             this.currentTrack.title = info.title;
             this.currentTrack.artist = info.uploader;
             this.currentTrack.thumbnail = info.thumbnail;
+            this.currentTrack.duration = info.duration;
             this.queue[this.currentIndex] = { ...this.currentTrack };
           }
 

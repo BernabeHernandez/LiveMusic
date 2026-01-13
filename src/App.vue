@@ -19,11 +19,13 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { usePlayerStore } from './stores/player'
 import AppHeader from './components/layout/AppHeader.vue'
 import Sidebar from './components/layout/Sidebar.vue'
 import MusicPlayer from './components/Music/MusicPlayer.vue'
 
+const playerStore = usePlayerStore()
 const isSidebarOpen = ref(false)
 
 const toggleSidebar = () => {
@@ -33,6 +35,11 @@ const toggleSidebar = () => {
 const closeSidebar = () => {
   isSidebarOpen.value = false
 }
+
+onMounted(() => {
+  playerStore.initStore()
+  console.log('Favoritos cargados:', playerStore.favoritesCount)
+})
 </script>
 
 <style scoped>

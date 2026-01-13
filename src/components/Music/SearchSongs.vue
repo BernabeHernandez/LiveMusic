@@ -2,7 +2,7 @@
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { usePlayerStore } from '../../../src/stores/player'
-import { Search, Music, Play, Pause, Loader } from 'lucide-vue-next'
+import { Search, Music, Play, Pause, Loader, Heart } from 'lucide-vue-next'
 
 const route = useRoute()
 const playerStore = usePlayerStore()
@@ -32,6 +32,17 @@ let autoLoadCount = 0
 let retryTimeout = null
 let scrollTimeout = null
 let retryAttempts = 0
+
+// Toggle favorito con prevención de propagación
+const toggleFavorite = (event, track) => {
+  event.stopPropagation() // Prevenir que se reproduzca la canción
+  playerStore.toggleFavorite(track)
+}
+
+// Verificar si una canción es favorita
+const isFavorite = (videoId) => {
+  return playerStore.isFavorite(videoId)
+}
 
 const preloadAudioUrls = async (items) => {
   const itemsToPreload = items.slice(0, PRELOAD_COUNT);
@@ -217,7 +228,8 @@ const playTrack = (item, index) => {
     videoId: result.videoId || result.url?.split('v=')[1]?.split('&')[0] || result.url?.split('/').pop(),
     title: result.title,
     artist: result.artist || result.uploader || 'YouTube',
-    thumbnail: result.thumbnail
+    thumbnail: result.thumbnail,
+    duration: result.duration || 0
   }))
 
   playerStore.setQueue(tracksQueue, index)
@@ -333,6 +345,19 @@ onUnmounted(() => {
             />
             <Pause v-else :size="32" class="play-icon" />
           </div>
+          
+          <!-- Botón de favorito en la esquina del thumbnail -->
+          <button
+            class="favorite-badge"
+            :class="{ 'is-favorite': isFavorite(item.videoId) }"
+            @click="toggleFavorite($event, item)"
+            :title="isFavorite(item.videoId) ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+          >
+            <Heart 
+              :size="16" 
+              :fill="isFavorite(item.videoId) ? 'currentColor' : 'none'"
+            />
+          </button>
         </div>
         
         <div class="info">
@@ -585,6 +610,47 @@ onUnmounted(() => {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
 }
 
+/* Botón de favorito en el thumbnail */
+.favorite-badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(4px);
+  border: none;
+  color: #b3b3b3;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+}
+
+.song-card:hover .favorite-badge {
+  opacity: 1;
+}
+
+.favorite-badge.is-favorite {
+  opacity: 1;
+  color: #1db954;
+  background: rgba(29, 185, 84, 0.2);
+}
+
+.favorite-badge:hover {
+  transform: scale(1.15);
+  background: rgba(29, 185, 84, 0.3);
+  color: #1db954;
+}
+
+.favorite-badge.is-favorite:hover {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.2);
+}
+
 .info {
   flex: 1;
   min-width: 0;
@@ -728,6 +794,10 @@ onUnmounted(() => {
   .load-more-button {
     padding: 0.6rem 1.2rem;
     min-width: 160px;
+  }
+  
+  .favorite-badge {
+    padding: 4px;
   }
 }
 

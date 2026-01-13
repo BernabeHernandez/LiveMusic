@@ -1,755 +1,773 @@
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { usePlayerStore } from '@/stores/player'
-import { Play, Music2, Mic2, Guitar, Flame, Crown, Trophy, Disc3, Radio, ChevronRight } from 'lucide-vue-next'
+import { usePlayerStore } from '../stores/player'
+import { 
+  Play, 
+  Heart, 
+  TrendingUp, 
+  Clock, 
+  Music2,
+  Sparkles,
+  Flame,
+  Radio
+} from 'lucide-vue-next'
 
 const router = useRouter()
 const playerStore = usePlayerStore()
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+// Estados
+const currentTime = ref(new Date().getHours())
+const isLoading = ref(true)
 
-const artists = ref([
-  {
-    name: 'Peso Pluma',
-    genre: 'Corridos Tumbados',
-    icon: 'Music2',
-    color: 'from-purple-500 to-pink-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
+// Sugerencias de búsqueda dinámicas
+const trendingSearches = ref([
+  { query: 'Bad Bunny', icon: Flame, color: '#ff6b6b' },
+  { query: 'The Weeknd', icon: TrendingUp, color: '#4ecdc4' },
+  { query: 'Taylor Swift', icon: Sparkles, color: '#a78bfa' },
+  { query: 'Drake', icon: Radio, color: '#fbbf24' },
+  { query: 'Billie Eilish', icon: Music2, color: '#34d399' },
+  { query: 'Ed Sheeran', icon: Heart, color: '#f472b6' }
+])
+
+// Categorías de géneros musicales
+const genres = ref([
+  { 
+    name: 'Pop', 
+    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    searches: ['Dua Lipa', 'Ariana Grande', 'Harry Styles']
   },
-  {
-    name: 'Natanael Cano',
-    genre: 'Corridos Tumbados',
-    icon: 'Guitar',
-    color: 'from-blue-500 to-cyan-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
+  { 
+    name: 'Rock', 
+    gradient: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    searches: ['Queen', 'Guns N\' Roses', 'Nirvana']
   },
-  {
-    name: 'Junior H',
-    genre: 'Corridos',
-    icon: 'Mic2',
-    color: 'from-orange-500 to-red-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
+  { 
+    name: 'Hip Hop', 
+    gradient: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)',
+    searches: ['Kendrick Lamar', 'J. Cole', 'Travis Scott']
   },
-  {
-    name: 'Bad Bunny',
-    genre: 'Reggaetón',
-    icon: 'Crown',
-    color: 'from-yellow-500 to-orange-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
+  { 
+    name: 'Electronic', 
+    gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
+    searches: ['Daft Punk', 'Calvin Harris', 'The Chainsmokers']
   },
-  {
-    name: 'Karol G',
-    genre: 'Reggaetón',
-    icon: 'Trophy',
-    color: 'from-pink-500 to-rose-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
+  { 
+    name: 'Latin', 
+    gradient: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)',
+    searches: ['Bad Bunny', 'J Balvin', 'Karol G']
   },
-  {
-    name: 'Feid',
-    genre: 'Reggaetón',
-    icon: 'Disc3',
-    color: 'from-green-500 to-emerald-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
+  { 
+    name: 'R&B', 
+    gradient: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)',
+    searches: ['The Weeknd', 'SZA', 'Frank Ocean']
   },
-  {
-    name: 'Anuel AA',
-    genre: 'Reggaetón',
-    icon: 'Crown',
-    color: 'from-red-500 to-pink-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
+  { 
+    name: 'Indie', 
+    gradient: 'linear-gradient(135deg, #a8edea 0%, #fed6e3 100%)',
+    searches: ['Arctic Monkeys', 'Tame Impala', 'The 1975']
   },
-  {
-    name: 'Grupo Frontera',
-    genre: 'Regional Mexicano',
-    icon: 'Radio',
-    color: 'from-indigo-500 to-purple-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
-  },
-  {
-    name: 'Fuerza Regida',
-    genre: 'Corridos',
-    icon: 'Flame',
-    color: 'from-amber-500 to-red-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
+  { 
+    name: 'Reggaeton', 
+    gradient: 'linear-gradient(135deg, #ff9a56 0%, #ff6a88 100%)',
+    searches: ['Daddy Yankee', 'Ozuna', 'Nicky Jam']
   }
 ])
 
-const songs = ref([
+// Playlists sugeridas
+const suggestedPlaylists = ref([
   {
-    title: 'Ella Baila Sola',
-    artist: 'Peso Pluma',
-    genre: 'Corridos Tumbados',
-    color: 'bg-purple-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
+    title: 'Top Hits 2024',
+    description: 'Lo más escuchado del momento',
+    query: 'Top hits 2024',
+    color: '#1db954'
   },
   {
-    title: 'PRC',
-    artist: 'Natanael Cano',
-    genre: 'Corridos Tumbados',
-    color: 'bg-blue-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
+    title: 'Chill Vibes',
+    description: 'Música relajante para estudiar',
+    query: 'Chill music study',
+    color: '#8e44ad'
   },
   {
-    title: 'Soy El Diablo',
-    artist: 'Natanael Cano',
-    genre: 'Corridos',
-    color: 'bg-cyan-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
+    title: 'Workout Energy',
+    description: 'Música para entrenar',
+    query: 'Workout music gym',
+    color: '#e74c3c'
   },
   {
-    title: 'Tití Me Preguntó',
-    artist: 'Bad Bunny',
-    genre: 'Reggaetón',
-    color: 'bg-yellow-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
-  },
-  {
-    title: 'Provenza',
-    artist: 'Karol G',
-    genre: 'Reggaetón',
-    color: 'bg-pink-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
-  },
-  {
-    title: 'Classy 101',
-    artist: 'Feid',
-    genre: 'Reggaetón',
-    color: 'bg-green-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
-  },
-  {
-    title: 'Bebé Dame',
-    artist: 'Fuerza Regida',
-    genre: 'Corridos',
-    color: 'bg-red-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
-  },
-  {
-    title: 'Un X100to',
-    artist: 'Grupo Frontera',
-    genre: 'Regional Mexicano',
-    color: 'bg-indigo-600',
-    image: 'https://www.pngall.com/wp-content/uploads/5/Profile.png'
+    title: 'Música en Español',
+    description: 'Los mejores éxitos latinos',
+    query: 'Música en español 2024',
+    color: '#f39c12'
   }
 ])
 
+// Computed
+const greeting = computed(() => {
+  const hour = currentTime.value
+  if (hour < 12) return '¡Buenos días!'
+  if (hour < 18) return '¡Buenas tardes!'
+  return '¡Buenas noches!'
+})
 
-const shuffledArtists = computed(() =>
-  [...artists.value].sort(() => Math.random() - 0.5).slice(0, 6)
-)
+const recentFavorites = computed(() => {
+  return playerStore.favorites.slice(0, 6)
+})
 
-const shuffledSongs = computed(() =>
-  [...songs.value].sort(() => Math.random() - 0.5).slice(0, 6)
-)
+const hasFavorites = computed(() => {
+  return playerStore.favorites.length > 0
+})
 
-const getIconComponent = (iconName) => {
-  const icons = { Music2, Mic2, Guitar, Flame, Crown, Trophy, Disc3, Radio }
-  return icons[iconName] || Music2
+// Métodos
+const searchMusic = (query) => {
+  router.push({ path: '/search', query: { q: query } })
 }
 
-const goSearch = (text) => {
-  router.push({
-    name: 'search',
-    query: { q: text }
-  })
+const playFavorite = (track, index) => {
+  const favorites = playerStore.favorites
+  playerStore.setQueue(favorites, index)
 }
 
-const playSong = async (song) => {
-  try {
-    const query = `${song.title} ${song.artist}`
-
-    const res = await fetch(
-      `${API_URL}/api/search?q=${encodeURIComponent(query)}`
-    )
-
-    const data = await res.json()
-    const first = data.items?.[0]
-
-    if (!first?.videoId) {
-      console.warn('No se encontró video para:', query)
-      return
-    }
-
-    playerStore.playTrack(first.videoId, {
-      title: song.title,
-      artist: song.artist,
-      thumbnail: first.thumbnail
-    })
-  } catch (error) {
-    console.error('Error reproduciendo canción:', error)
-  }
+const quickPlayGenre = (genre) => {
+  const randomSearch = genre.searches[Math.floor(Math.random() * genre.searches.length)]
+  searchMusic(randomSearch)
 }
+
+onMounted(() => {
+  setTimeout(() => {
+    isLoading.value = false
+  }, 300)
+})
 </script>
 
 <template>
-  <div class="home-apple">
-    <section class="section">
-      <h2 class="section-title">Para Ti</h2>
-      <div class="quick-grid">
-        <div
-          v-for="song in shuffledSongs"
-          :key="song.title"
-          class="quick-card"
-          @click="playSong(song)"
+  <div class="home-view">
+    <!-- Hero Section -->
+    <section class="hero-section">
+      <div class="hero-content">
+        <h1 class="greeting">{{ greeting }}</h1>
+        <p class="hero-subtitle">¿Qué quieres escuchar hoy?</p>
+      </div>
+      
+      <div class="quick-actions">
+        <div 
+          v-for="search in trendingSearches.slice(0, 4)" 
+          :key="search.query"
+          @click="searchMusic(search.query)"
+          class="quick-action-card"
         >
-          <div class="quick-image-container">
-            <img :src="song.image" :alt="song.title" class="quick-image" />
-            <div class="quick-overlay"></div>
-          </div>
-          <div class="quick-info">
-            <h3 class="quick-title">{{ song.title }}</h3>
-            <p class="quick-artist">{{ song.artist }}</p>
-          </div>
-          <button class="quick-play-btn" @click.stop="playSong(song)">
-            <div class="play-btn-circle">
-              <Play :size="20" fill="currentColor" />
-            </div>
-          </button>
+          <component 
+            :is="search.icon" 
+            :size="24" 
+            :style="{ color: search.color }"
+          />
+          <span>{{ search.query }}</span>
         </div>
       </div>
     </section>
 
-    <section class="section">
+    <!-- Favorites Section -->
+    <section v-if="hasFavorites" class="section favorites-section">
       <div class="section-header">
-        <h2 class="section-title">Artistas Destacados</h2>
-        <button class="see-all" @click="goSearch('artistas populares')">
-          Ver Todo
-          <ChevronRight :size="18" />
+        <h2 class="section-title">
+          <Heart :size="24" class="section-icon" />
+          Tus Favoritos
+        </h2>
+        <router-link to="/favorites" class="see-all-link">
+          Ver todos
+        </router-link>
+      </div>
+
+      <div class="favorites-grid">
+        <div
+          v-for="(track, index) in recentFavorites"
+          :key="track.videoId"
+          @click="playFavorite(track, index)"
+          class="favorite-card"
+          :class="{ 'is-playing': playerStore.currentTrack?.videoId === track.videoId }"
+        >
+          <div class="favorite-thumbnail">
+            <img :src="track.thumbnail" :alt="track.title" />
+            <div class="play-overlay">
+              <div class="play-button-large">
+                <Play :size="28" fill="currentColor" />
+              </div>
+            </div>
+          </div>
+          <div class="favorite-info">
+            <p class="favorite-title">{{ track.title }}</p>
+            <p class="favorite-artist">{{ track.artist }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Suggested Playlists -->
+    <section class="section playlists-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <Sparkles :size="24" class="section-icon" />
+          Playlists Recomendadas
+        </h2>
+      </div>
+
+      <div class="playlists-grid">
+        <div
+          v-for="playlist in suggestedPlaylists"
+          :key="playlist.title"
+          @click="searchMusic(playlist.query)"
+          class="playlist-card"
+        >
+          <div class="playlist-cover" :style="{ background: playlist.color }">
+            <Music2 :size="48" class="playlist-icon" />
+          </div>
+          <div class="playlist-info">
+            <p class="playlist-title">{{ playlist.title }}</p>
+            <p class="playlist-description">{{ playlist.description }}</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Genres Section -->
+    <section class="section genres-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <Music2 :size="24" class="section-icon" />
+          Explorar por Género
+        </h2>
+      </div>
+
+      <div class="genres-grid">
+        <div
+          v-for="genre in genres"
+          :key="genre.name"
+          @click="quickPlayGenre(genre)"
+          class="genre-card"
+          :style="{ background: genre.gradient }"
+        >
+          <h3 class="genre-name">{{ genre.name }}</h3>
+          <div class="genre-icon-bg">
+            <Music2 :size="64" class="genre-icon" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Trending Section -->
+    <section class="section trending-section">
+      <div class="section-header">
+        <h2 class="section-title">
+          <TrendingUp :size="24" class="section-icon" />
+          Tendencias
+        </h2>
+      </div>
+
+      <div class="trending-list">
+        <div
+          v-for="(search, index) in trendingSearches"
+          :key="search.query"
+          @click="searchMusic(search.query)"
+          class="trending-item"
+        >
+          <div class="trending-number">{{ index + 1 }}</div>
+          <component 
+            :is="search.icon" 
+            :size="20" 
+            class="trending-icon"
+            :style="{ color: search.color }"
+          />
+          <div class="trending-info">
+            <p class="trending-query">{{ search.query }}</p>
+            <p class="trending-label">Buscar artista</p>
+          </div>
+          <div class="trending-action">
+            <Play :size="20" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Empty State for Favorites -->
+    <section v-if="!hasFavorites" class="section empty-favorites">
+      <div class="empty-state">
+        <div class="empty-icon">
+          <Heart :size="64" />
+        </div>
+        <h3 class="empty-title">Aún no tienes favoritos</h3>
+        <p class="empty-description">
+          Marca tus canciones favoritas con ❤️ y aparecerán aquí
+        </p>
+        <button @click="router.push('/search')" class="cta-button">
+          <Music2 :size="20" />
+          Explorar Música
         </button>
       </div>
-
-      <div class="artists-scroll">
-        <div
-          v-for="artist in shuffledArtists"
-          :key="artist.name"
-          class="artist-card-apple"
-          @click="goSearch(artist.name)"
-        >
-          <div class="artist-circle-container">
-            <img :src="artist.image" :alt="artist.name" class="artist-image" />
-            <div class="artist-overlay"></div>
-          </div>
-          <h3 class="artist-name">{{ artist.name }}</h3>
-          <p class="artist-genre">{{ artist.genre }}</p>
-        </div>
-      </div>
     </section>
-
-    <section class="section">
-      <h2 class="section-title">Explora por Género</h2>
-      <div class="genres-grid">
-        <div class="genre-card" :class="`bg-gradient-to-br from-purple-600 to-pink-700`" @click="goSearch('corridos tumbados')">
-          <div class="genre-icon-container">
-            <Guitar :size="48" :stroke-width="1.5" />
-          </div>
-          <h3 class="genre-name">Corridos Tumbados</h3>
-        </div>
-        <div class="genre-card" :class="`bg-gradient-to-br from-yellow-500 to-orange-600`" @click="goSearch('reggaeton')">
-          <div class="genre-icon-container">
-            <Flame :size="48" :stroke-width="1.5" />
-          </div>
-          <h3 class="genre-name">Reggaetón</h3>
-        </div>
-        <div class="genre-card" :class="`bg-gradient-to-br from-red-600 to-rose-700`" @click="goSearch('regional mexicano')">
-          <div class="genre-icon-container">
-            <Radio :size="48" :stroke-width="1.5" />
-          </div>
-          <h3 class="genre-name">Regional Mexicano</h3>
-        </div>
-        <div class="genre-card" :class="`bg-gradient-to-br from-blue-600 to-indigo-700`" @click="goSearch('corridos')">
-          <div class="genre-icon-container">
-            <Music2 :size="48" :stroke-width="1.5" />
-          </div>
-          <h3 class="genre-name">Corridos</h3>
-        </div>
-      </div>
-    </section>
-
-    <section class="section songs-section">
-      <h2 class="section-title">Todas las Canciones</h2>
-
-      <div class="songs-list">
-        <div
-          v-for="(song, index) in songs"
-          :key="song.title"
-          class="song-row"
-          @click="playSong(song)"
-        >
-          <div class="song-number">{{ index + 1 }}</div>
-          
-          <div class="song-thumbnail-container">
-            <img :src="song.image" :alt="song.title" class="song-thumbnail-image" />
-            <div class="song-thumbnail-overlay">
-              <Play :size="20" fill="currentColor" />
-            </div>
-          </div>
-          
-          <div class="song-details">
-            <h3 class="song-title">{{ song.title }}</h3>
-            <p class="song-meta">{{ song.artist }} · {{ song.genre }}</p>
-          </div>
-
-          <button class="song-play-btn" @click.stop="playSong(song)">
-            <Play :size="20" />
-          </button>
-        </div>
-      </div>
-    </section>
-
   </div>
 </template>
 
 <style scoped>
-.home-apple {
-  padding-bottom: 4rem;
-  min-height: 100vh;
+.home-view {
+  width: 100%;
+  padding-bottom: 40px;
+  animation: fadeIn 0.4s ease-out;
 }
 
-.hero-welcome {
-  position: relative;
-  margin: 1rem 1rem 2rem 1rem;
-  padding: 3rem 2rem;
-  border-radius: 1.5rem;
-  overflow: hidden;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
-.hero-gradient {
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 30% 50%, rgba(255,255,255,0.1) 0%, transparent 50%);
-  pointer-events: none;
+/* Hero Section */
+.hero-section {
+  margin-bottom: 48px;
 }
 
 .hero-content {
-  position: relative;
-  z-index: 10;
+  margin-bottom: 32px;
 }
 
-.hero-title {
+.greeting {
   font-size: 3rem;
-  font-weight: 900;
-  color: white;
-  margin-bottom: 0.5rem;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  font-weight: 800;
+  margin: 0 0 12px 0;
+  background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+  animation: slideDown 0.6s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .hero-subtitle {
   font-size: 1.25rem;
-  color: rgba(255,255,255,0.9);
-  font-weight: 500;
+  color: #b3b3b3;
+  margin: 0;
+  animation: slideDown 0.6s ease-out 0.1s backwards;
 }
 
+.quick-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  animation: slideUp 0.6s ease-out 0.2s backwards;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.quick-action-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 20px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.quick-action-card:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.quick-action-card span {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Section Styles */
 .section {
-  margin: 2.5rem 1rem;
+  margin-bottom: 48px;
+  animation: fadeIn 0.6s ease-out;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: 24px;
 }
 
 .section-title {
-  font-size: 1.875rem;
-  font-weight: 800;
-  color: white;
-  letter-spacing: -0.02em;
-}
-
-.see-all {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
-  background: none;
-  border: none;
-  color: rgba(255,255,255,0.7);
-  font-size: 1rem;
+  gap: 12px;
+  letter-spacing: -0.01em;
+}
+
+.section-icon {
+  color: #1db954;
+}
+
+.see-all-link {
+  color: #b3b3b3;
+  text-decoration: none;
+  font-size: 0.9rem;
   font-weight: 600;
-  cursor: pointer;
   transition: color 0.2s;
-  padding: 0.5rem;
 }
 
-.see-all:hover {
-  color: white;
+.see-all-link:hover {
+  color: #1db954;
 }
 
-.quick-grid {
+/* Favorites Grid */
+.favorites-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
 }
 
-.quick-card {
-  display: flex;
-  align-items: center;
-  background: rgba(255,255,255,0.08);
-  border-radius: 0.75rem;
-  overflow: hidden;
+.favorite-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 16px;
   cursor: pointer;
-  transition: all 0.2s ease;
-  height: 80px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+}
+
+.favorite-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.favorite-card.is-playing {
+  background: rgba(29, 185, 84, 0.15);
+  border-color: #1db954;
+}
+
+.favorite-thumbnail {
   position: relative;
-  backdrop-filter: blur(10px);
-}
-
-.quick-card:hover {
-  background: rgba(255,255,255,0.15);
-  transform: scale(1.02);
-}
-
-.quick-card:active {
-  transform: scale(0.98);
-}
-
-.quick-image-container {
-  width: 80px;
-  height: 80px;
-  flex-shrink: 0;
-  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 8px;
   overflow: hidden;
+  margin-bottom: 12px;
 }
 
-.quick-image {
+.favorite-thumbnail img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.3s;
 }
 
-.quick-overlay {
+.favorite-card:hover .favorite-thumbnail img {
+  transform: scale(1.05);
+}
+
+.play-overlay {
   position: absolute;
   inset: 0;
-  background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.1) 100%);
-}
-
-.quick-info {
-  flex: 1;
-  padding: 0 1rem;
-  min-width: 0;
-}
-
-.quick-title {
-  font-size: 1rem;
-  font-weight: 700;
-  color: white;
-  margin-bottom: 0.25rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.quick-artist {
-  font-size: 0.875rem;
-  color: rgba(255,255,255,0.7);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.quick-play-btn {
-  background: none;
-  border: none;
-  color: white;
-  padding: 1rem;
-  cursor: pointer;
-  opacity: 0;
-  transition: opacity 0.2s;
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
 }
 
-.quick-card:hover .quick-play-btn {
+.favorite-card:hover .play-overlay {
   opacity: 1;
 }
 
-.play-btn-circle {
-  width: 40px;
-  height: 40px;
+.play-button-large {
+  width: 56px;
+  height: 56px;
+  background: #1db954;
   border-radius: 50%;
-  background: rgba(255,255,255,0.9);
-  color: #000;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  color: #000;
+  box-shadow: 0 8px 24px rgba(29, 185, 84, 0.4);
+  transition: transform 0.2s;
 }
 
-.play-btn-circle:hover {
-  background: white;
+.play-button-large:hover {
   transform: scale(1.1);
 }
 
-.artists-scroll {
-  display: flex;
-  gap: 1.5rem;
-  overflow-x: auto;
-  overflow-y: hidden;
-  padding-bottom: 1rem;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(255,255,255,0.2) transparent;
-  scroll-behavior: smooth;
+.favorite-info {
+  padding: 0 4px;
 }
 
-.artists-scroll::-webkit-scrollbar {
-  height: 8px;
-}
-
-.artists-scroll::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.artists-scroll::-webkit-scrollbar-thumb {
-  background: rgba(255,255,255,0.2);
-  border-radius: 4px;
-}
-
-.artist-card-apple {
-  flex: 0 0 160px;
-  cursor: pointer;
-  transition: transform 0.2s;
-  text-align: center;
-}
-
-.artist-card-apple:hover {
-  transform: translateY(-4px);
-}
-
-.artist-circle-container {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  overflow: hidden;
-  position: relative;
-  margin-bottom: 0.75rem;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-  transition: transform 0.2s, box-shadow 0.2s;
-}
-
-.artist-card-apple:hover .artist-circle-container {
-  transform: scale(1.05);
-  box-shadow: 0 12px 32px rgba(0,0,0,0.4);
-}
-
-.artist-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.artist-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, transparent 0%, rgba(0,0,0,0.4) 100%);
-}
-
-.artist-name {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: white;
-  margin-bottom: 0.25rem;
-}
-
-.artist-genre {
-  font-size: 0.875rem;
-  color: rgba(255,255,255,0.6);
-}
-
-.genres-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 1rem;
-}
-
-.genre-card {
-  height: 140px;
-  border-radius: 1rem;
-  padding: 1.5rem;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-.genre-card::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: radial-gradient(circle at 70% 30%, rgba(255,255,255,0.15) 0%, transparent 50%);
-  pointer-events: none;
-}
-
-.genre-card:hover {
-  transform: scale(1.03);
-  box-shadow: 0 8px 24px rgba(0,0,0,0.3);
-}
-
-.genre-icon-container {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  color: white;
-  opacity: 0.9;
-  transform: rotate(-15deg);
-}
-
-.genre-name {
-  font-size: 1.5rem;
-  font-weight: 800;
-  color: white;
-  text-shadow: 0 2px 8px rgba(0,0,0,0.2);
-  position: relative;
-  z-index: 10;
-}
-
-.songs-section {
-  margin-bottom: 6rem;
-}
-
-.songs-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.song-row {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  padding: 0.75rem;
-  border-radius: 0.75rem;
-  background: rgba(255,255,255,0.05);
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.song-row:hover {
-  background: rgba(255,255,255,0.1);
-}
-
-.song-number {
-  width: 32px;
-  text-align: center;
-  font-size: 1rem;
+.favorite-title {
+  font-size: 0.95rem;
   font-weight: 600;
-  color: rgba(255,255,255,0.5);
-  flex-shrink: 0;
-}
-
-.song-thumbnail-container {
-  width: 56px;
-  height: 56px;
-  border-radius: 0.5rem;
-  flex-shrink: 0;
-  position: relative;
+  margin: 0 0 4px 0;
   overflow: hidden;
-  transition: transform 0.2s;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.song-row:hover .song-thumbnail-container {
-  transform: scale(1.05);
+.favorite-artist {
+  font-size: 0.85rem;
+  color: #b3b3b3;
+  margin: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.song-thumbnail-image {
+/* Playlists Grid */
+.playlists-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.playlist-card {
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
+  padding: 20px;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.playlist-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-4px);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.playlist-cover {
   width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.song-thumbnail-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.4);
+  aspect-ratio: 1;
+  border-radius: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
-  opacity: 0;
-  transition: opacity 0.2s;
-  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.song-row:hover .song-thumbnail-overlay {
-  opacity: 1;
+.playlist-icon {
+  color: rgba(255, 255, 255, 0.9);
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
-.song-details {
+.playlist-title {
+  font-size: 1rem;
+  font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.playlist-description {
+  font-size: 0.85rem;
+  color: #b3b3b3;
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Genres Grid */
+.genres-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.genre-card {
+  position: relative;
+  height: 140px;
+  border-radius: 12px;
+  padding: 16px;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.genre-card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+}
+
+.genre-name {
+  font-size: 1.25rem;
+  font-weight: 800;
+  margin: 0;
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.genre-icon-bg {
+  position: absolute;
+  bottom: -10px;
+  right: -10px;
+  opacity: 0.3;
+  transform: rotate(-15deg);
+}
+
+.genre-icon {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* Trending List */
+.trending-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.trending-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid transparent;
+}
+
+.trending-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.trending-number {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #b3b3b3;
+  min-width: 32px;
+}
+
+.trending-icon {
+  flex-shrink: 0;
+}
+
+.trending-info {
   flex: 1;
   min-width: 0;
 }
 
-.song-title {
-  font-size: 1rem;
+.trending-query {
+  font-size: 0.95rem;
   font-weight: 600;
-  color: white;
-  margin-bottom: 0.25rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  margin: 0 0 2px 0;
 }
 
-.song-meta {
-  font-size: 0.875rem;
-  color: rgba(255,255,255,0.6);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.trending-label {
+  font-size: 0.8rem;
+  color: #b3b3b3;
+  margin: 0;
 }
 
-.song-play-btn {
-  background: none;
-  border: none;
-  color: white;
-  padding: 0.75rem;
-  cursor: pointer;
+.trending-action {
+  color: #1db954;
   opacity: 0;
   transition: opacity 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
 }
 
-.song-row:hover .song-play-btn {
+.trending-item:hover .trending-action {
   opacity: 1;
 }
 
-@media (max-width: 1024px) {
-  .hero-welcome {
-    padding: 2.5rem 1.5rem;
-  }
-
-  .hero-title {
-    font-size: 2.5rem;
-  }
-
-  .hero-subtitle {
-    font-size: 1.125rem;
-  }
-
-  .section-title {
-    font-size: 1.625rem;
-  }
-
-  .quick-grid {
-    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  }
+/* Empty State */
+.empty-favorites {
+  margin-top: 80px;
 }
 
-@media (max-width: 768px) {
-  .hero-welcome {
-    margin: 0.75rem 0.75rem 1.5rem 0.75rem;
-    padding: 2rem 1.25rem;
-  }
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  max-width: 480px;
+  margin: 0 auto;
+}
 
-  .hero-title {
+.empty-icon {
+  width: 120px;
+  height: 120px;
+  margin: 0 auto 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(29, 185, 84, 0.1);
+  border-radius: 50%;
+  color: #1db954;
+}
+
+.empty-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 12px 0;
+}
+
+.empty-description {
+  font-size: 1rem;
+  color: #b3b3b3;
+  margin: 0 0 32px 0;
+  line-height: 1.5;
+}
+
+.cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 32px;
+  background: #1db954;
+  color: #000;
+  border: none;
+  border-radius: 24px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 4px 16px rgba(29, 185, 84, 0.3);
+}
+
+.cta-button:hover {
+  background: #1ed760;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 24px rgba(29, 185, 84, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .greeting {
     font-size: 2rem;
   }
 
@@ -757,150 +775,46 @@ const playSong = async (song) => {
     font-size: 1rem;
   }
 
-  .section {
-    margin: 2rem 0.75rem;
-  }
-
   .section-title {
-    font-size: 1.5rem;
+    font-size: 1.35rem;
   }
 
-  .quick-grid {
+  .quick-actions {
     grid-template-columns: 1fr;
   }
 
-  .artist-circle-container {
-    width: 140px;
-    height: 140px;
+  .favorites-grid {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
   }
 
-  .artist-card-apple {
-    flex: 0 0 140px;
+  .playlists-grid {
+    grid-template-columns: 1fr;
   }
 
   .genres-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
-  .genre-card {
-    height: 120px;
-  }
-}
-
-@media (max-width: 480px) {
-  .hero-welcome {
-    margin: 0.5rem 0.5rem 1rem 0.5rem;
-    padding: 1.75rem 1rem;
-    border-radius: 1rem;
-  }
-
-  .hero-title {
-    font-size: 1.75rem;
-  }
-
-  .hero-subtitle {
-    font-size: 0.875rem;
-  }
-
-  .section {
-    margin: 1.5rem 0.5rem;
-  }
-
-  .section-title {
-    font-size: 1.25rem;
-  }
-
-  .see-all {
-    font-size: 0.875rem;
-  }
-
-  .quick-grid {
-    gap: 0.75rem;
-  }
-
-  .quick-card {
-    height: 72px;
-  }
-
-  .quick-image-container {
-    width: 72px;
-    height: 72px;
-  }
-
-  .artist-circle-container {
-    width: 120px;
-    height: 120px;
-  }
-
-  .artist-card-apple {
-    flex: 0 0 120px;
-  }
-
-  .artist-name {
-    font-size: 0.875rem;
-  }
-
-  .artist-genre {
-    font-size: 0.75rem;
-  }
-
-  .genre-card {
-    height: 110px;
-    padding: 1.25rem;
-  }
-
-  .genre-icon-container {
-    transform: scale(0.85) rotate(-15deg);
-  }
-
-  .genre-name {
-    font-size: 1.25rem;
-  }
-
-  .song-number {
-    width: 24px;
-    font-size: 0.875rem;
-  }
-
-  .song-thumbnail-container {
-    width: 48px;
-    height: 48px;
-  }
-
-  .song-title {
-    font-size: 0.875rem;
-  }
-
-  .song-meta {
-    font-size: 0.75rem;
+  .trending-number {
+    font-size: 1rem;
+    min-width: 24px;
   }
 }
 
-@media (max-width: 375px) {
-  .hero-title {
-    font-size: 1.5rem;
+@media (min-width: 1024px) {
+  .favorites-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   }
 
-  .section-title {
-    font-size: 1.125rem;
+  .genres-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   }
+}
 
-  .quick-card {
-    height: 64px;
-  }
-
-  .quick-image-container {
-    width: 64px;
-    height: 64px;
-  }
-
-  .artist-circle-container {
-    width: 100px;
-    height: 100px;
-  }
-
-  .artist-card-apple {
-    flex: 0 0 100px;
+@media (min-width: 1280px) {
+  .quick-actions {
+    grid-template-columns: repeat(4, 1fr);
   }
 }
 </style>
