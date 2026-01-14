@@ -154,7 +154,6 @@ onMounted(loadLastSearch)
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Left Section */
 .header-left {
   display: flex;
   align-items: center;
