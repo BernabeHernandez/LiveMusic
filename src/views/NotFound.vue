@@ -10,7 +10,6 @@
 </template>
 
 <script setup>
-// No necesita lógica por ahora
 </script>
 
 <style scoped>
