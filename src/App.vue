@@ -1,5 +1,7 @@
 <template>
   <div class="app-layout">
+    <OfflineNotice />
+    
     <AppHeader @toggle-sidebar="toggleSidebar" />
 
     <div class="main-container">
@@ -21,6 +23,7 @@
 <script setup>
 import { ref, onMounted } from 'vue'
 import { usePlayerStore } from './stores/player'
+import OfflineNotice from './components/OfflineNotice.vue'
 import AppHeader from './components/layout/AppHeader.vue'
 import Sidebar from './components/layout/Sidebar.vue'
 import MusicPlayer from './components/Music/MusicPlayer.vue'
