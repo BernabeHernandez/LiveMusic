@@ -242,7 +242,7 @@ onMounted(loadLastSearch)
   outline: none;
   background: transparent;
   color: white;
-  font-size: 0.9rem;
+  font-size: 16px;
   width: 100%;
   font-family: inherit;
 }

@@ -11,7 +11,6 @@ const updateOnlineStatus = () => {
   if (!navigator.onLine) {
     showOfflineNotice.value = true
   } else {
-    // Ocultar después de 2 segundos cuando vuelve online
     setTimeout(() => {
       showOfflineNotice.value = false
     }, 2000)
@@ -100,7 +99,6 @@ onUnmounted(() => {
   line-height: 1.3;
 }
 
-/* Animations */
 .slide-down-enter-active,
 .slide-down-leave-active {
   transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
