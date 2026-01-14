@@ -1,30 +1,99 @@
 <script setup>
-import { ref } from 'vue'
-import { useRouter } from 'vue-router'
-import { Menu } from 'lucide-vue-next'
+import { ref, watch, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { Menu, Search, X } from 'lucide-vue-next'
 
 const router = useRouter()
-const query = ref('')
+const route = useRoute()
 
 const emit = defineEmits(['toggle-sidebar'])
 
-const goSearch = () => {
-  if (!query.value.trim()) return
+const searchQuery = ref('')
+const isFocused = ref(false)
+
+const STORAGE_KEY = 'music_search_state'
+
+const loadLastSearch = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (!saved) return
+
+    const state = JSON.parse(saved)
+    const isRecent = Date.now() - state.timestamp < 24 * 60 * 60 * 1000
+
+    if (isRecent && state.query) {
+      searchQuery.value = state.query
+    }
+  } catch (err) {
+    console.error('Error cargando búsqueda:', err)
+  }
+}
+
+const saveSearch = () => {
+  localStorage.setItem(
+    STORAGE_KEY,
+    JSON.stringify({
+      query: searchQuery.value,
+      timestamp: Date.now()
+    })
+  )
+}
+
+watch(
+  () => route.query.q,
+  (newQuery) => {
+    if (newQuery && newQuery !== searchQuery.value) {
+      searchQuery.value = newQuery
+    }
+  },
+  { immediate: true }
+)
+
+const handleSearch = () => {
+  if (!searchQuery.value.trim()) return
+
+  saveSearch()
 
   router.push({
-    name: 'search',
-    query: { q: query.value }
+    path: '/search',
+    query: { q: searchQuery.value.trim() }
   })
+}
+
+const handleFocus = () => {
+  isFocused.value = true
+
+  if (searchQuery.value && route.path !== '/search') {
+    router.push({
+      path: '/search',
+      query: { q: searchQuery.value }
+    })
+  }
+}
+
+const handleBlur = () => {
+  isFocused.value = false
+}
+
+const clearSearch = () => {
+  searchQuery.value = ''
+  localStorage.removeItem(STORAGE_KEY)
+
+  if (route.path === '/search') {
+    router.push('/')
+  }
 }
 
 const toggleSidebar = () => {
   emit('toggle-sidebar')
 }
+
+onMounted(loadLastSearch)
 </script>
 
 <template>
   <header class="app-header">
-    <button 
+    <button
       @click="toggleSidebar"
       class="hamburger-btn"
       aria-label="Toggle menu"
@@ -35,12 +104,27 @@ const toggleSidebar = () => {
     <div class="logo">LiveMusic</div>
 
     <nav class="header-nav">
-      <input
-        v-model="query"
-        @keyup.enter="goSearch"
-        placeholder="Buscar música..."
-        class="search-input"
-      />
+      <div class="search-wrapper">
+        <Search class="search-icon" :size="18" />
+
+        <input
+          v-model="searchQuery"
+          class="search-input"
+          placeholder="Buscar música..."
+          @keyup.enter="handleSearch"
+          @focus="handleFocus"
+          @blur="handleBlur"
+        />
+
+        <button
+          v-if="searchQuery"
+          class="clear-btn"
+          @click="clearSearch"
+          aria-label="Limpiar búsqueda"
+        >
+          <X :size="16" />
+        </button>
+      </div>
 
       <router-link to="/library" class="library-link">
         Tu biblioteca
@@ -73,8 +157,6 @@ const toggleSidebar = () => {
   cursor: pointer;
   padding: 0.5rem;
   border-radius: 8px;
-  transition: background 0.2s;
-  -webkit-tap-highlight-color: transparent;
 }
 
 .hamburger-btn:hover {
@@ -84,7 +166,6 @@ const toggleSidebar = () => {
 .logo {
   font-size: 1.4rem;
   font-weight: bold;
-  flex-shrink: 0;
   color: white;
 }
 
@@ -94,68 +175,66 @@ const toggleSidebar = () => {
   gap: 1rem;
   flex: 1;
   justify-content: flex-end;
-  min-width: 0; 
 }
 
-.header-nav a {
-  color: white;
-  text-decoration: none;
-  opacity: 0.8;
-  white-space: nowrap;
+.search-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
-.header-nav a.router-link-active {
-  opacity: 1;
-  font-weight: bold;
+.search-icon {
+  position: absolute;
+  left: 14px;
+  color: rgba(255,255,255,0.6);
 }
 
 .search-input {
-  width: 100%;
-  max-width: 100%;
-  padding: 12px 18px;
+  padding: 12px 40px 12px 38px;
   border-radius: 999px;
   border: none;
   outline: none;
   background: rgba(255,255,255,0.15);
   color: white;
   font-size: 1rem;
+  width: 220px;
 }
 
 .search-input::placeholder {
   color: rgba(255,255,255,0.7);
 }
 
-@media (min-width: 768px) {
-  .app-header {
-    padding: 0 2rem;
-  }
+.clear-btn {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+}
 
+.library-link {
+  color: white;
+  text-decoration: none;
+  opacity: 0.8;
+}
+
+.library-link.router-link-active {
+  opacity: 1;
+  font-weight: bold;
+}
+
+@media (min-width: 768px) {
   .hamburger-btn {
     display: none;
-  }
-
-  .logo {
-    font-size: 1.6rem;
   }
 
   .search-input {
     width: 260px;
   }
-
-  .header-nav {
-    gap: 2rem;
-  }
 }
 
 @media (max-width: 479px) {
-  .app-header {
-    padding: 0 0.75rem;
-  }
-
-  .logo {
-    font-size: 1.2rem;
-  }
-
   .library-link {
     display: none;
   }

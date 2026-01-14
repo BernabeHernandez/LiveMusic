@@ -1,10 +1,11 @@
 <script setup>
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
-import { usePlayerStore } from '../../../src/stores/player'
+import { useRoute, useRouter } from 'vue-router'
+import { usePlayerStore } from '../../stores/player'
 import { Search, Music, Play, Pause, Loader, Heart } from 'lucide-vue-next'
 
 const route = useRoute()
+const router = useRouter()
 const playerStore = usePlayerStore()
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
@@ -28,6 +29,8 @@ const RETRY_DELAY = 1500
 const MAX_RETRY_ATTEMPTS = 3 
 const PRELOAD_COUNT = 20
 
+const STORAGE_KEY = 'music_search_state'
+
 let autoLoadCount = 0
 let retryTimeout = null
 let scrollTimeout = null
@@ -40,6 +43,54 @@ const toggleFavorite = (event, track) => {
 
 const isFavorite = (videoId) => {
   return playerStore.isFavorite(videoId)
+}
+
+const saveSearchState = () => {
+  if (!query.value || results.value.length === 0) return
+  
+  try {
+    const state = {
+      query: query.value,
+      results: results.value,
+      totalAvailable: totalAvailable.value,
+      hasMore: hasMore.value,
+      currentOffset: currentOffset.value,
+      isExpanded: isExpanded.value,
+      timestamp: Date.now()
+    }
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    console.log('Estado guardado:', query.value)
+  } catch (error) {
+    console.error('Error guardando búsqueda:', error)
+  }
+}
+
+const loadSearchState = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY)
+    if (!saved) return false
+    
+    const state = JSON.parse(saved)
+    
+    const isRecent = Date.now() - state.timestamp < 24 * 60 * 60 * 1000
+    if (!isRecent) {
+      localStorage.removeItem(STORAGE_KEY)
+      return false
+    }
+    
+    query.value = state.query
+    results.value = state.results
+    totalAvailable.value = state.totalAvailable
+    hasMore.value = state.hasMore
+    currentOffset.value = state.currentOffset
+    isExpanded.value = state.isExpanded
+    
+    console.log('Estado restaurado:', state.query)
+    return true
+  } catch (error) {
+    console.error('Error cargando búsqueda:', error)
+    return false
+  }
 }
 
 const preloadAudioUrls = async (items) => {
@@ -168,6 +219,8 @@ const search = async (loadMore = false) => {
       errorMessage.value = 'No se encontraron resultados'
     }
 
+    saveSearchState()
+
     await nextTick()
 
     if (!loadMore && hasMore.value && !isScrollable() && autoLoadCount < MAX_AUTO_LOADS) {
@@ -281,6 +334,11 @@ watch(
     if (newQuery) {
       query.value = newQuery
       search(false)
+    } else if (!newQuery && route.path === '/search') {
+      const restored = loadSearchState()
+      if (restored) {
+        router.replace({ path: '/search', query: { q: query.value } })
+      }
     }
   },
   { immediate: true }
@@ -289,6 +347,12 @@ watch(
 onMounted(() => {
   console.log('Componente montado - Listeners activos')
   window.addEventListener('scroll', handleScroll, { passive: true })
+  if (!route.query.q && route.path === '/search') {
+    const restored = loadSearchState()
+    if (restored) {
+      router.replace({ path: '/search', query: { q: query.value } })
+    }
+  }
 })
 
 onUnmounted(() => {
@@ -296,6 +360,9 @@ onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
   if (scrollTimeout) clearTimeout(scrollTimeout)
   if (retryTimeout) clearTimeout(retryTimeout)
+  if (results.value.length > 0) {
+    saveSearchState()
+  }
 })
 </script>
 
@@ -445,7 +512,6 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   word-break: break-word;
 }
@@ -607,7 +673,6 @@ onUnmounted(() => {
   filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
 }
 
-/* Botón de favorito en el thumbnail */
 .favorite-badge {
   position: absolute;
   top: 4px;
@@ -663,7 +728,6 @@ onUnmounted(() => {
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   word-break: break-word;
 }

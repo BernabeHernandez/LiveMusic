@@ -266,7 +266,6 @@ const formatTime = (seconds) => {
   border-radius: 2px;
   background: #404040;
   outline: none;
-  -webkit-appearance: none;
   cursor: pointer;
 }
 

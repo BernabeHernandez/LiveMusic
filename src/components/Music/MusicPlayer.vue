@@ -1,18 +1,21 @@
 <script setup>
 import { onMounted, onUnmounted, ref, computed } from 'vue'
 import { usePlayerStore } from '../../../src/stores/player'
+import ExpandedPlayer from '../ExpandedPlayer.vue'
 import { 
   Play, 
   Pause, 
   SkipBack, 
   SkipForward, 
   Shuffle, 
-  Repeat
+  Repeat,
+  Heart
 } from 'lucide-vue-next'
 
 const playerStore = usePlayerStore()    
 const audioElement = ref(null)
 const isSeeking = ref(false)
+const isExpanded = ref(false)
 
 const canGoPrevious = computed(() => {
   return playerStore.currentIndex > 0 || playerStore.currentTime > 3
@@ -22,8 +25,27 @@ const canGoNext = computed(() => {
   return playerStore.currentIndex < playerStore.queue.length - 1
 })
 
+const isCurrentFavorite = computed(() => {
+  return playerStore.isCurrentTrackFavorite
+})
+
+const toggleFavorite = () => {
+  if (playerStore.currentTrack) {
+    playerStore.toggleFavorite(playerStore.currentTrack)
+  }
+}
+
+const expandPlayer = () => {
+  isExpanded.value = true
+}
+
+const closeExpandedPlayer = () => {
+  isExpanded.value = false
+}
+
 onMounted(() => {
   playerStore.initAudioPlayer(audioElement.value)
+  playerStore.initStore()
 })
 
 onUnmounted(() => {
@@ -57,13 +79,26 @@ const formatTime = (seconds) => {
 <template>
   <audio ref="audioElement" preload="metadata"></audio>
 
+  <ExpandedPlayer 
+    :isExpanded="isExpanded" 
+    @close="closeExpandedPlayer"
+  />
+
   <div v-if="playerStore.currentTrack" class="player-bar">
-    <div class="track-info">
+    <div class="track-info" @click="expandPlayer">
       <img :src="playerStore.currentTrack.thumbnail" alt="Cover" class="track-thumbnail" />
       <div class="track-details">
         <p class="track-title">{{ playerStore.currentTrack.title }}</p>
         <p class="track-artist">{{ playerStore.currentTrack.artist }}</p>
       </div>
+      <button 
+        @click.stop="toggleFavorite" 
+        class="favorite-button-mini"
+        :class="{ 'is-favorite': isCurrentFavorite }"
+        :title="isCurrentFavorite ? 'Quitar de favoritos' : 'Agregar a favoritos'"
+      >
+        <Heart :size="18" :fill="isCurrentFavorite ? 'currentColor' : 'none'" />
+      </button>
     </div>
 
     <div class="player-controls">
@@ -158,6 +193,15 @@ const formatTime = (seconds) => {
   flex: 1;
   min-width: 0;
   max-width: 300px;
+  cursor: pointer;
+  padding: 8px;
+  margin: -8px;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.track-info:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .track-thumbnail {
@@ -191,6 +235,31 @@ const formatTime = (seconds) => {
   white-space: nowrap;
 }
 
+.favorite-button-mini {
+  background: transparent;
+  border: none;
+  color: #b3b3b3;
+  cursor: pointer;
+  padding: 6px;
+  border-radius: 50%;
+  transition: all 0.2s;
+  flex-shrink: 0;
+}
+
+.favorite-button-mini:hover {
+  color: #1db954;
+  background: rgba(29, 185, 84, 0.1);
+  transform: scale(1.1);
+}
+
+.favorite-button-mini.is-favorite {
+  color: #1db954;
+}
+
+.favorite-button-mini.is-favorite:hover {
+  color: #ff4444;
+}
+
 .player-controls {
   flex: 2;
   display: flex;
@@ -221,7 +290,6 @@ const formatTime = (seconds) => {
   border-radius: 2px;
   background: #404040;
   outline: none;
-  -webkit-appearance: none;
   cursor: pointer;
 }
 
