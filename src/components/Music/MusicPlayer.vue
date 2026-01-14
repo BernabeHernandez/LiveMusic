@@ -10,7 +10,7 @@ import {
   Repeat
 } from 'lucide-vue-next'
 
-const playerStore = usePlayerStore()
+const playerStore = usePlayerStore()    
 const audioElement = ref(null)
 const isSeeking = ref(false)
 
