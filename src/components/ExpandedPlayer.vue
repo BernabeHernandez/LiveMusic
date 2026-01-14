@@ -451,7 +451,6 @@ const handleClose = () => {
   font-variant-numeric: tabular-nums;
 }
 
-/* CONTROLES - Altura fija */
 .controls-area {
   flex-shrink: 0;
   margin: 10px 0;
