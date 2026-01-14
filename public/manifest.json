@@ -1,6 +1,6 @@
 {
-  "name": "Music Player",
-  "short_name": "Music",
+  "name": "LiveMusic",
+  "short_name": "LiveMusic",
   "description": "Reproductor de música online",
   "start_url": "/",
   "display": "standalone",
