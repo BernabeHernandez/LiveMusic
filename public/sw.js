@@ -116,7 +116,7 @@ self.addEventListener('fetch', (event) => {
       caches.match(request)
         .then((cachedResponse) => {
           if (cachedResponse) {
-            console.log('📦 Sirviendo desde caché (asset):', url.pathname)
+            console.log('Sirviendo desde caché (asset):', url.pathname)
             return cachedResponse
           }
 
@@ -169,7 +169,7 @@ self.addEventListener('fetch', (event) => {
     event.respondWith(
       fetch(request)
         .catch((error) => {
-          console.log('❌ API call falló (offline):', url.pathname)
+          console.log('API call falló (offline):', url.pathname)
           return new Response(
             JSON.stringify({ 
               error: 'Sin conexión', 
@@ -202,7 +202,7 @@ self.addEventListener('fetch', (event) => {
         return caches.match(request)
           .then((cachedResponse) => {
             if (cachedResponse) {
-              console.log('📦 Sirviendo desde caché (fallback):', url.pathname)
+              console.log('Sirviendo desde caché (fallback):', url.pathname)
               return cachedResponse
             }
             return caches.match('/index.html')
