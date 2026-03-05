@@ -19,6 +19,11 @@ export const useAuthStore = defineStore('auth', () => {
             if (response.data.success) {
                 user.value = response.data.user;
                 localStorage.setItem('user', JSON.stringify(user.value));
+
+                // Sincronizar favoritos locales a la nube al iniciar sesión
+                const playerStore = (await import('./player')).usePlayerStore();
+                playerStore.syncLocalFavorites();
+
                 return { success: true };
             }
         } catch (error) {

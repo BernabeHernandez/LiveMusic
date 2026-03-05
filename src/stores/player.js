@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia';
 import { dbService } from '../services/db.js';
+import { useAuthStore } from './auth';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 const FAVORITES_STORAGE_KEY = 'music_player_favorites'
@@ -21,7 +22,9 @@ export const usePlayerStore = defineStore('player', {
     durationFixed: false,
     isRepeatEnabled: false,
     favorites: [],
-    activeLocalObjectUrl: null
+    activeLocalObjectUrl: null,
+    prefetchedData: new Map(), // { videoId: { audioUrl, duration, info } }
+    currentAbortController: null
   }),
 
   getters: {
@@ -41,60 +44,102 @@ export const usePlayerStore = defineStore('player', {
       this.loadFavorites();
     },
 
-    loadFavorites() {
+    async loadFavorites() {
+      const authStore = useAuthStore();
+      if (authStore.isAuthenticated()) {
+        try {
+          const response = await fetch(`${API_URL}/api/favorites?userId=${authStore.user._id}`);
+          if (response.ok) {
+            this.favorites = await response.json();
+            console.log(`✅ Favoritos sincronizados desde la nube: ${this.favorites.length}`);
+            return;
+          }
+        } catch (error) {
+          console.error('Error sincronizando favoritos:', error);
+        }
+      }
+
+      // Fallback a localStorage si offline o error
       try {
         const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
         if (stored) {
           this.favorites = JSON.parse(stored);
-          console.log(`✅ Cargados ${this.favorites.length} favoritos`);
+          console.log(`✅ Cargados ${this.favorites.length} favoritos locales`);
         }
       } catch (error) {
-        console.error('Error cargando favoritos:', error);
+        console.error('Error cargando favoritos locales:', error);
         this.favorites = [];
       }
     },
 
-    saveFavorites() {
-      try {
-        localStorage.setItem(FAVORITES_STORAGE_KEY, JSON.stringify(this.favorites));
-        console.log(`💾 Guardados ${this.favorites.length} favoritos`);
-      } catch (error) {
-        console.error('Error guardando favoritos:', error);
-      }
-    },
-
-    toggleFavorite(track) {
+    async toggleFavorite(track) {
+      const authStore = useAuthStore();
       const index = this.favorites.findIndex(fav => fav.videoId === track.videoId);
 
       if (index !== -1) {
+        // Quitar
         this.favorites.splice(index, 1);
+        if (authStore.isAuthenticated()) {
+          fetch(`${API_URL}/api/favorites/${authStore.user._id}/${track.videoId}`, { method: 'DELETE' });
+        }
         console.log('💔 Quitado de favoritos:', track.title);
       } else {
+        // Agregar
         const favoriteTrack = {
           videoId: track.videoId,
           title: track.title,
           artist: track.artist || 'YouTube',
-          thumbnail: track.thumbnail || `https://i.ytimg.com/vi/${track.videoId}/mqdefault.jpg`,
+          thumbnail: this.upgradeThumbnail(track.thumbnail || `https://i.ytimg.com/vi/${track.videoId}/mqdefault.jpg`),
           duration: track.duration || 0,
           addedAt: new Date().toISOString()
         };
 
         this.favorites.unshift(favoriteTrack);
+        if (authStore.isAuthenticated()) {
+          fetch(`${API_URL}/api/favorites`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...favoriteTrack, userId: authStore.user._id })
+          });
+        }
         console.log('❤️ Agregado a favoritos:', track.title);
       }
 
       this.saveFavorites();
     },
 
-    removeFavorite(videoId) {
+    async removeFavorite(videoId) {
+      const authStore = useAuthStore();
       const index = this.favorites.findIndex(fav => fav.videoId === videoId);
       if (index !== -1) {
         const removed = this.favorites.splice(index, 1)[0];
+        if (authStore.isAuthenticated()) {
+          fetch(`${API_URL}/api/favorites/${authStore.user._id}/${videoId}`, { method: 'DELETE' });
+        }
         this.saveFavorites();
         console.log('💔 Quitado de favoritos:', removed.title);
         return true;
       }
       return false;
+    },
+
+    async syncLocalFavorites() {
+      const authStore = useAuthStore();
+      if (!authStore.isAuthenticated() || this.favorites.length === 0) return;
+
+      console.log('🔄 Sincronizando favoritos locales con la nube...');
+      for (const fav of this.favorites) {
+        try {
+          await fetch(`${API_URL}/api/favorites`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...fav, userId: authStore.user._id })
+          });
+        } catch (e) {
+          console.warn('Error sincronizando favorito:', fav.title);
+        }
+      }
+      this.loadFavorites(); // Recargar desde nube para limpiar si hubo cambios
     },
 
     clearFavorites() {
@@ -211,21 +256,34 @@ export const usePlayerStore = defineStore('player', {
     },
 
     async playTrack(videoId, trackInfo = {}) {
+      if (this.currentAbortController) this.currentAbortController.abort();
+      this.currentAbortController = new AbortController();
+      const signal = this.currentAbortController.signal;
+      const targetVideoId = videoId;
+
       this.currentTrack = {
         title: trackInfo.title || 'Cargando...',
-        artist: trackInfo.artist || 'YouTube',
-        thumbnail: trackInfo.thumbnail || `https://i.ytimg.com/vi/${videoId}/mqdefault.jpg`,
-        videoId,
+        artist: trackInfo.artist || 'Artista...',
+        thumbnail: this.upgradeThumbnail(trackInfo.thumbnail || `https://i.ytimg.com/vi/${targetVideoId}/mqdefault.jpg`),
+        videoId: targetVideoId,
         duration: trackInfo.duration || 0
       };
 
-      const existingIndex = this.queue.findIndex(t => t.videoId === videoId);
+      const existingIndex = this.queue.findIndex(t => t.videoId === targetVideoId);
       if (existingIndex !== -1) {
         this.currentIndex = existingIndex;
+        if (this.queue[existingIndex].title !== 'Cargando...') {
+          const q = this.queue[existingIndex];
+          this.currentTrack.title = q.title;
+          this.currentTrack.artist = q.artist;
+          this.currentTrack.thumbnail = q.thumbnail;
+        }
       } else {
         this.queue.push(this.currentTrack);
         this.currentIndex = this.queue.length - 1;
       }
+
+      const targetIndex = this.currentIndex;
 
       try {
         console.log('🎵 Cargando canción:', videoId);
@@ -236,42 +294,72 @@ export const usePlayerStore = defineStore('player', {
         const downloadedBlob = await dbService.getDownloadBlob(videoId);
 
         if (downloadedBlob) {
-          console.log('Reproduciendo canción desde IndexedDB (offline)');
-          if (this.activeLocalObjectUrl) {
-            URL.revokeObjectURL(this.activeLocalObjectUrl);
-          }
+          console.log('⚡ Reproduciendo OFFLINE');
+          if (this.activeLocalObjectUrl) URL.revokeObjectURL(this.activeLocalObjectUrl);
           audioSourceUrl = URL.createObjectURL(downloadedBlob);
           this.activeLocalObjectUrl = audioSourceUrl;
 
-          const metadata = await dbService.getDownloadMetadata(videoId);
-          if (metadata) {
+          const metadata = await dbService.getDownloadMetadata(targetVideoId);
+          if (metadata && this.currentTrack.videoId === targetVideoId) {
             this.backendDuration = metadata.duration || 0;
-            if (!trackInfo.title) {
-              this.currentTrack.title = metadata.title;
-              this.currentTrack.artist = metadata.artist;
-              this.currentTrack.thumbnail = metadata.thumbnail;
-              this.queue[this.currentIndex] = { ...this.currentTrack };
-            }
+            this.currentTrack.title = metadata.title || this.currentTrack.title;
+            this.currentTrack.artist = metadata.artist || this.currentTrack.artist;
+            this.currentTrack.thumbnail = this.upgradeThumbnail(metadata.thumbnail || this.currentTrack.thumbnail);
+            this.queue[targetIndex] = { ...this.currentTrack };
           }
         } else {
           // 2. Reproducción ONLINE normal
-          console.log('Buscando URL de audio en la API...');
-          const response = await fetch(`${API_URL}/api/audio/${videoId}`);
-          const data = await response.json();
+          const prefetched = this.prefetchedData.get(targetVideoId);
 
-          if (!data.audioUrl) throw new Error('No se encontró URL de audio');
+          if (prefetched) {
+            console.log('⚡ Reproduciendo desde PREFETCH');
+            audioSourceUrl = prefetched.audioUrl;
+            this.backendDuration = prefetched.duration;
+            if (prefetched.info && this.currentTrack.videoId === targetVideoId) {
+              this.currentTrack.title = prefetched.info.title || this.currentTrack.title;
+              this.currentTrack.artist = prefetched.info.uploader || this.currentTrack.artist;
+              this.currentTrack.thumbnail = this.upgradeThumbnail(prefetched.info.thumbnail || this.currentTrack.thumbnail);
+              this.currentTrack.duration = prefetched.info.duration || this.currentTrack.duration;
+              this.queue[targetIndex] = { ...this.currentTrack };
+            }
+            this.prefetchedData.delete(targetVideoId);
+          } else {
+            console.log('Buscando URL de audio...');
 
-          audioSourceUrl = data.audioUrl;
-          this.backendDuration = data.duration || 0;
+            // Primero intentamos obtener el audio, que es lo CRÍTICO
+            try {
+              const audioResponse = await fetch(`${API_URL}/api/audio/${targetVideoId}`, { signal });
+              const data = await audioResponse.json();
 
-          const infoRes = await fetch(`${API_URL}/api/video-info/${videoId}`);
-          if (infoRes.ok) {
-            const info = await infoRes.json();
-            this.currentTrack.title = info.title;
-            this.currentTrack.artist = info.uploader;
-            this.currentTrack.thumbnail = info.thumbnail;
-            this.currentTrack.duration = info.duration;
-            this.queue[this.currentIndex] = { ...this.currentTrack };
+              if (!data.audioUrl) throw new Error('No audio URL');
+
+              audioSourceUrl = data.audioUrl;
+              this.backendDuration = data.duration || 0;
+
+              // Actualizamos info básica si no la tenemos
+              // Metadata en segundo plano con aislamiento
+              fetch(`${API_URL}/api/video-info/${targetVideoId}`, { signal })
+                .then(r => r.json())
+                .then(info => {
+                  if (info && info.title && this.currentTrack?.videoId === targetVideoId) {
+                    this.currentTrack.title = info.title;
+                    this.currentTrack.artist = info.uploader || 'YouTube';
+                    if (info.thumbnail) {
+                      this.currentTrack.thumbnail = this.upgradeThumbnail(info.thumbnail);
+                    }
+                    this.currentTrack.duration = info.duration || this.currentTrack.duration;
+                    this.queue[targetIndex] = { ...this.currentTrack };
+                    this.updateMediaSession();
+                  }
+                })
+                .catch(err => {
+                  if (err.name !== 'AbortError') console.warn('Metadata extra falló:', err);
+                });
+
+            } catch (err) {
+              if (err.name === 'AbortError') return;
+              throw err;
+            }
           }
         }
 
@@ -284,13 +372,20 @@ export const usePlayerStore = defineStore('player', {
           console.log('Duración del backend:', this.backendDuration, 'segundos');
 
           this.audio.src = audioSourceUrl;
-          await this.audio.play();
-          this.isPlaying = true;
-          this.updateMediaSession();
+
+          try {
+            await this.audio.play();
+            this.isPlaying = true;
+            this.updateMediaSession();
+            this.prefetchNextTrack();
+          } catch (playError) {
+            if (playError.name !== 'AbortError') throw playError;
+          }
         }
       } catch (error) {
-        console.error('Error cargando audio:', error);
-        alert('No se pudo reproducir la canción');
+        if (error.name === 'AbortError') return;
+        console.error('Fatal playback error:', error);
+        alert('Disculpa, no pudimos reproducir esta canción. Revisa tu conexión o intenta con otra.');
       }
     },
 
@@ -416,6 +511,43 @@ export const usePlayerStore = defineStore('player', {
       }
     },
 
+    async prefetchNextTrack() {
+      const nextIndex = this.currentIndex + 1;
+      if (nextIndex < this.queue.length) {
+        const nextTrack = this.queue[nextIndex];
+
+        // No pre-cargar si ya está en caché o descargado
+        if (this.prefetchedData.has(nextTrack.videoId)) return;
+
+        console.log('🚀 Pre-cargando siguiente canción:', nextTrack.title);
+
+        try {
+          // Primero revisar si está descargada. Si lo está, no necesitamos pre-cargar de red.
+          const isDownloaded = await dbService.getDownloadMetadata(nextTrack.videoId);
+          if (isDownloaded) {
+            console.log('Next track is downloaded, skipping network prefetch');
+            return;
+          }
+
+          const [audioRes, infoRes] = await Promise.all([
+            fetch(`${API_URL}/api/audio/${nextTrack.videoId}`).then(r => r.json()),
+            fetch(`${API_URL}/api/video-info/${nextTrack.videoId}`).then(r => r.json())
+          ]);
+
+          if (audioRes.audioUrl) {
+            this.prefetchedData.set(nextTrack.videoId, {
+              audioUrl: audioRes.audioUrl,
+              duration: audioRes.duration,
+              info: infoRes
+            });
+            console.log('✅ Pre-carga lista para:', nextTrack.title);
+          }
+        } catch (err) {
+          console.warn('Error en pre-carga:', err);
+        }
+      }
+    },
+
     cleanup() {
       if (this.audio) {
         this.audio.pause();
@@ -425,6 +557,16 @@ export const usePlayerStore = defineStore('player', {
         URL.revokeObjectURL(this.activeLocalObjectUrl);
         this.activeLocalObjectUrl = null;
       }
+    },
+
+    upgradeThumbnail(url) {
+      if (!url) return '';
+      // Si ya es de alta resolución o no es de YouTube, no tocar
+      if (url.includes('maxresdefault') || !url.includes('img.youtube.com') && !url.includes('i.ytimg.com')) {
+        return url;
+      }
+      // Reemplazar mqdefault, hqdefault, sddefault por maxresdefault
+      return url.replace(/\/(mqdefault|hqdefault|sddefault|default)\.jpg/, '/maxresdefault.jpg');
     }
   }
 });

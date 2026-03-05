@@ -314,9 +314,9 @@ const handleClose = () => {
 
 .album-art-frame {
   position: relative;
-  width: min(85vw, 340px);
-  aspect-ratio: 1;
-  max-height: 60vh;
+  width: min(95vw, 480px); /* Aumentado para compensar el cambio de 1:1 a 16:9 */
+  aspect-ratio: 16 / 9;
+  max-height: 50vh;
   margin: 0 auto;
 }
 
@@ -324,7 +324,8 @@ const handleClose = () => {
   width: 100%;
   height: 100%;
   border-radius: 12px;
-  object-fit: cover;
+  object-fit: contain; /* Cambiado a contain para asegurar que NADA se corte */
+  background: rgba(255, 255, 255, 0.03); /* Fondo sutil para el área si la imagen no llena */
   position: relative;
   z-index: 2;
   box-shadow: 
@@ -333,15 +334,14 @@ const handleClose = () => {
 }
 
 .art-glow {
-  position: absolute;
-  inset: -15px;
+  inset: -10px;
   border-radius: 20px;
   background: inherit;
   background-image: inherit;
   background-size: cover;
   background-position: center;
-  filter: blur(30px) brightness(1.2);
-  opacity: 0.4;
+  filter: blur(40px) brightness(1.1);
+  opacity: 0.3;
   z-index: 1;
 }
 
@@ -549,8 +549,8 @@ const handleClose = () => {
 
 @media (max-height: 600px) {
   .album-art-frame {
-    width: min(75vw, 280px);
-    max-height: 50vh;
+    width: min(90vw, 400px);
+    max-height: 40vh;
   }
   
   .track-title {
