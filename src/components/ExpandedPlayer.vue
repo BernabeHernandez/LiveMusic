@@ -11,6 +11,7 @@ import {
   Heart,
   ChevronDown
 } from 'lucide-vue-next'
+import DownloadButton from './DownloadButton.vue'
 
 const playerStore = usePlayerStore()
 
@@ -92,13 +93,17 @@ const handleClose = () => {
               <h3 class="track-title">{{ playerStore.currentTrack?.title || 'Sin título' }}</h3>
               <p class="track-artist">{{ playerStore.currentTrack?.artist || 'Artista desconocido' }}</p>
             </div>
-            <button 
-              @click="toggleFavorite" 
-              class="favorite-button"
-              :class="{ 'is-favorite': isCurrentFavorite }"
-            >
-              <Heart :size="22" :fill="isCurrentFavorite ? 'currentColor' : 'none'" />
-            </button>
+            
+            <div class="flex items-center gap-1">
+              <DownloadButton v-if="playerStore.currentTrack" :track="playerStore.currentTrack" />
+              <button 
+                @click="toggleFavorite" 
+                class="favorite-button"
+                :class="{ 'is-favorite': isCurrentFavorite }"
+              >
+                <Heart :size="22" :fill="isCurrentFavorite ? 'currentColor' : 'none'" />
+              </button>
+            </div>
           </div>
 
           <div class="progress-area">

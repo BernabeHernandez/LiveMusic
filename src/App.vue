@@ -2,21 +2,22 @@
   <div class="app-layout">
     <OfflineNotice />
     
-    <AppHeader @toggle-sidebar="toggleSidebar" />
+    <AppHeader v-if="authStore.isAuthenticated()" @toggle-sidebar="toggleSidebar" />
 
     <div class="main-container">
       <Sidebar 
+        v-if="authStore.isAuthenticated()"
         class="sidebar" 
         :isOpen="isSidebarOpen"
         @close="closeSidebar"
       />
 
-      <main class="content-area">
+      <main class="content-area" :class="{ 'auth-view': !authStore.isAuthenticated() }">
         <router-view />
       </main>
     </div>
 
-    <MusicPlayer class="music-player" />
+    <MusicPlayer v-if="authStore.isAuthenticated()" class="music-player" />
   </div>
 </template>
 
@@ -27,7 +28,9 @@ import OfflineNotice from './components/OfflineNotice.vue'
 import AppHeader from './components/layout/AppHeader.vue'
 import Sidebar from './components/layout/Sidebar.vue'
 import MusicPlayer from './components/Music/MusicPlayer.vue'
+import { useAuthStore } from './stores/auth'
 
+const authStore = useAuthStore()
 const playerStore = usePlayerStore()
 const isSidebarOpen = ref(false)
 
@@ -81,6 +84,11 @@ onMounted(() => {
   padding: 0.75rem;
   background: linear-gradient(to bottom, #121212, #0f0f0f);
   padding-bottom: 110px;
+}
+
+.content-area.auth-view {
+  padding: 0;
+  padding-bottom: 0;
 }
 
 .music-player {

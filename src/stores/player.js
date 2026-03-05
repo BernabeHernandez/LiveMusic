@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia';
+import { dbService } from '../services/db.js';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 const FAVORITES_STORAGE_KEY = 'music_player_favorites'
@@ -13,13 +14,14 @@ export const usePlayerStore = defineStore('player', {
     currentIndex: 0,
     currentTime: 0,
     duration: 0,
-    backendDuration: 0, 
+    backendDuration: 0,
     progress: 0,
     isShuffleEnabled: false,
     playedIndices: [],
     durationFixed: false,
     isRepeatEnabled: false,
-    favorites: [] 
+    favorites: [],
+    activeLocalObjectUrl: null
   }),
 
   getters: {
@@ -63,7 +65,7 @@ export const usePlayerStore = defineStore('player', {
 
     toggleFavorite(track) {
       const index = this.favorites.findIndex(fav => fav.videoId === track.videoId);
-      
+
       if (index !== -1) {
         this.favorites.splice(index, 1);
         console.log('💔 Quitado de favoritos:', track.title);
@@ -74,13 +76,13 @@ export const usePlayerStore = defineStore('player', {
           artist: track.artist || 'YouTube',
           thumbnail: track.thumbnail || `https://i.ytimg.com/vi/${track.videoId}/mqdefault.jpg`,
           duration: track.duration || 0,
-          addedAt: new Date().toISOString() 
+          addedAt: new Date().toISOString()
         };
-        
-        this.favorites.unshift(favoriteTrack); 
+
+        this.favorites.unshift(favoriteTrack);
         console.log('❤️ Agregado a favoritos:', track.title);
       }
-      
+
       this.saveFavorites();
     },
 
@@ -106,7 +108,7 @@ export const usePlayerStore = defineStore('player', {
         console.warn('No hay favoritos para reproducir');
         return;
       }
-      
+
       this.setQueue([...this.favorites], startIndex);
       console.log(`🎵 Reproduciendo favoritos (${this.favorites.length} canciones)`);
     },
@@ -118,20 +120,20 @@ export const usePlayerStore = defineStore('player', {
 
         this.audio.addEventListener('timeupdate', () => {
           this.currentTime = this.audio.currentTime;
-          
+
           if (this.backendDuration > 0) {
             this.duration = this.backendDuration;
           } else if (this.audio.duration && !isNaN(this.audio.duration) && isFinite(this.audio.duration)) {
             this.duration = this.audio.duration;
           }
-          
+
           if (this.currentTime > this.duration && this.duration > 0) {
             console.warn('Duración incorrecta detectada. Forzando corrección...');
             this.duration = this.currentTime;
           }
-          
+
           this.progress = this.duration > 0 ? (this.currentTime / this.duration) * 100 : 0;
-          
+
           if (this.backendDuration > 0 && this.currentTime >= this.backendDuration - 0.5) {
             console.log('Canción terminada según duración del backend');
             this.handleTrackEnd();
@@ -141,13 +143,13 @@ export const usePlayerStore = defineStore('player', {
         this.audio.addEventListener('loadedmetadata', () => {
           console.log('loadedmetadata - audio.duration:', this.audio.duration);
           console.log('backendDuration guardada:', this.backendDuration);
-          
+
           if (this.audio.duration && !isNaN(this.audio.duration) && isFinite(this.audio.duration)) {
             const audioDuration = this.audio.duration;
-            
+
             if (this.backendDuration > 0) {
               const diff = Math.abs(audioDuration - this.backendDuration);
-              if (diff > 10) { 
+              if (diff > 10) {
                 console.warn('Duración discrepante:', {
                   audio: audioDuration,
                   backend: this.backendDuration,
@@ -227,24 +229,40 @@ export const usePlayerStore = defineStore('player', {
 
       try {
         console.log('🎵 Cargando canción:', videoId);
-        
-        const response = await fetch(`${API_URL}/api/audio/${videoId}`);
-        const data = await response.json();
 
-        if (data.audioUrl) {
-          this.duration = 0;
-          this.backendDuration = data.duration || 0; 
-          this.currentTime = 0;
-          this.progress = 0;
-          this.durationFixed = false;
-          
-          console.log('Duración del backend:', this.backendDuration, 'segundos');
-          console.log('URL del audio:', data.audioUrl.substring(0, 50) + '...');
-          
-          this.audio.src = data.audioUrl;
-          
-          await this.audio.play();
-          this.isPlaying = true;
+        let audioSourceUrl = null;
+
+        // 1. Revisar en IndexedDB si la canción está descargada
+        const downloadedBlob = await dbService.getDownloadBlob(videoId);
+
+        if (downloadedBlob) {
+          console.log('Reproduciendo canción desde IndexedDB (offline)');
+          if (this.activeLocalObjectUrl) {
+            URL.revokeObjectURL(this.activeLocalObjectUrl);
+          }
+          audioSourceUrl = URL.createObjectURL(downloadedBlob);
+          this.activeLocalObjectUrl = audioSourceUrl;
+
+          const metadata = await dbService.getDownloadMetadata(videoId);
+          if (metadata) {
+            this.backendDuration = metadata.duration || 0;
+            if (!trackInfo.title) {
+              this.currentTrack.title = metadata.title;
+              this.currentTrack.artist = metadata.artist;
+              this.currentTrack.thumbnail = metadata.thumbnail;
+              this.queue[this.currentIndex] = { ...this.currentTrack };
+            }
+          }
+        } else {
+          // 2. Reproducción ONLINE normal
+          console.log('Buscando URL de audio en la API...');
+          const response = await fetch(`${API_URL}/api/audio/${videoId}`);
+          const data = await response.json();
+
+          if (!data.audioUrl) throw new Error('No se encontró URL de audio');
+
+          audioSourceUrl = data.audioUrl;
+          this.backendDuration = data.duration || 0;
 
           const infoRes = await fetch(`${API_URL}/api/video-info/${videoId}`);
           if (infoRes.ok) {
@@ -255,7 +273,19 @@ export const usePlayerStore = defineStore('player', {
             this.currentTrack.duration = info.duration;
             this.queue[this.currentIndex] = { ...this.currentTrack };
           }
+        }
 
+        if (audioSourceUrl) {
+          this.duration = 0;
+          this.currentTime = 0;
+          this.progress = 0;
+          this.durationFixed = false;
+
+          console.log('Duración del backend:', this.backendDuration, 'segundos');
+
+          this.audio.src = audioSourceUrl;
+          await this.audio.play();
+          this.isPlaying = true;
           this.updateMediaSession();
         }
       } catch (error) {
@@ -276,12 +306,12 @@ export const usePlayerStore = defineStore('player', {
 
     seekTo(percent) {
       if (!this.audio || isNaN(this.duration) || this.duration === 0) return;
-      
+
       const maxDuration = this.backendDuration > 0 ? this.backendDuration : this.duration;
       const time = (percent / 100) * maxDuration;
-      
+
       console.log('Seeking a:', time, 'de', maxDuration);
-      
+
       if (time <= maxDuration) {
         this.audio.currentTime = time;
       }
@@ -320,11 +350,11 @@ export const usePlayerStore = defineStore('player', {
         if (this.playedIndices.length >= this.queue.length) {
           this.playedIndices = [];
         }
-        
+
         do {
           nextIndex = Math.floor(Math.random() * this.queue.length);
         } while (this.playedIndices.includes(nextIndex) && this.playedIndices.length < this.queue.length);
-        
+
         this.playedIndices.push(nextIndex);
       } else {
         nextIndex = this.currentIndex + 1;
@@ -357,7 +387,7 @@ export const usePlayerStore = defineStore('player', {
         prevIndex = this.playedIndices[this.playedIndices.length - 1];
       } else {
         prevIndex = this.currentIndex - 1;
-        
+
         if (prevIndex < 0) {
           console.log('Ya estás en la primera canción');
           this.audio.currentTime = 0;
@@ -390,6 +420,10 @@ export const usePlayerStore = defineStore('player', {
       if (this.audio) {
         this.audio.pause();
         this.audio.src = '';
+      }
+      if (this.activeLocalObjectUrl) {
+        URL.revokeObjectURL(this.activeLocalObjectUrl);
+        this.activeLocalObjectUrl = null;
       }
     }
   }

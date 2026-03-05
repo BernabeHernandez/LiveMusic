@@ -15,20 +15,21 @@ const APP_ROUTES = [
   '/search',
   '/library',
   '/favorites',
-  '/playlists'
+  '/playlists',
+  '/downloads'
 ]
 
 
 self.addEventListener('install', (event) => {
   console.log('Service Worker instalando...')
-  
+
   event.waitUntil(
     Promise.all([
       caches.open(STATIC_CACHE).then((cache) => {
         console.log(' Cacheando assets críticos...')
         return cache.addAll(STATIC_ASSETS)
       }),
-      
+
       caches.open(CACHE_NAME).then((cache) => {
         console.log(' Pre-cacheando TODAS las rutas de la app...')
         return cache.addAll(
@@ -36,21 +37,21 @@ self.addEventListener('install', (event) => {
         )
       })
     ])
-    .then(() => {
-      console.log('TODO cacheado - App 100% offline ready')
-      return self.skipWaiting()
-    })
-    .catch((error) => {
-      console.error('Error durante instalación:', error)
-      return self.skipWaiting()
-    })
+      .then(() => {
+        console.log('TODO cacheado - App 100% offline ready')
+        return self.skipWaiting()
+      })
+      .catch((error) => {
+        console.error('Error durante instalación:', error)
+        return self.skipWaiting()
+      })
   )
 })
 
 
 self.addEventListener('activate', (event) => {
   console.log(' Service Worker activando...')
-  
+
   event.waitUntil(
     caches.keys()
       .then((cacheNames) => {
@@ -171,8 +172,8 @@ self.addEventListener('fetch', (event) => {
         .catch((error) => {
           console.log('API call falló (offline):', url.pathname)
           return new Response(
-            JSON.stringify({ 
-              error: 'Sin conexión', 
+            JSON.stringify({
+              error: 'Sin conexión',
               offline: true,
               message: 'Esta función requiere conexión a internet'
             }),

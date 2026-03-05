@@ -40,7 +40,7 @@ onUnmounted(() => {
           <p v-else class="notice-title">Conectado</p>
           
           <p v-if="!isOnline" class="notice-subtitle">
-            Puedes navegar por la app, pero no podrás buscar o reproducir música
+            Estás sin conexión. Disfruta de tu música descargada.
           </p>
           <p v-else class="notice-subtitle">
             Conexión restaurada

@@ -1,6 +1,8 @@
 <script setup>
-import { X } from 'lucide-vue-next'
+import { X, DownloadCloud, LogOut } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/auth'
 
+const authStore = useAuthStore()
 const props = defineProps({
   isOpen: {
     type: Boolean,
@@ -44,7 +46,18 @@ const closeSidebar = () => {
       <router-link to="/playlists" class="nav-item" @click="closeSidebar">
         <span>Playlists</span>
       </router-link>
+      <router-link to="/downloads" class="nav-item" @click="closeSidebar">
+        <DownloadCloud :size="20" class="mr-3" />
+        <span>Descargas</span>
+      </router-link>
     </nav>
+
+    <div class="sidebar-footer" v-if="authStore.isAuthenticated()">
+      <button @click="authStore.logout()" class="nav-item logout-btn">
+        <LogOut :size="20" class="mr-3" />
+        <span>Cerrar Sesión</span>
+      </button>
+    </div>
   </aside>
 </template>
 
@@ -67,6 +80,33 @@ const closeSidebar = () => {
   overflow-y: auto;
   position: relative;
   transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.sidebar-nav {
+  flex: 1;
+}
+
+.sidebar-footer {
+  margin-top: auto;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.logout-btn {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 1rem;
+}
+
+.logout-btn:hover {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.1);
 }
 
 .sidebar-header {
