@@ -1,6 +1,52 @@
 <script setup>
-import { computed } from 'vue'
+import { ref, computed, watch, onMounted } from 'vue'
 import { usePlayerStore } from '../stores/player'
+
+const playerStore = usePlayerStore()
+const backgroundColor = ref('#121212') // Default dark color
+
+// Function to extract dominant color from image
+const extractDominantColor = (imageUrl) => {
+  if (!imageUrl) return
+  
+  const img = new Image()
+  img.crossOrigin = 'Anonymous'
+  img.src = imageUrl
+  
+  img.onload = () => {
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+    canvas.width = 10
+    canvas.height = 10
+    
+    context.drawImage(img, 0, 0, 10, 10)
+    const data = context.getImageData(0, 0, 10, 10).data
+    
+    let r = 0, g = 0, b = 0
+    for (let i = 0; i < data.length; i += 4) {
+      r += data[i]
+      g += data[i+1]
+      b += data[i+2]
+    }
+    
+    r = Math.floor(r / (data.length / 4))
+    g = Math.floor(g / (data.length / 4))
+    b = Math.floor(b / (data.length / 4))
+    
+    // darken color for better contrast
+    const darkenFactor = 0.6
+    const dr = Math.floor(r * darkenFactor)
+    const dg = Math.floor(g * darkenFactor)
+    const db = Math.floor(b * darkenFactor)
+    
+    backgroundColor.value = `rgb(${dr}, ${dg}, ${db})`
+  }
+}
+
+// Watch for track changes
+watch(() => playerStore.currentTrack?.thumbnail, (newThumb) => {
+  if (newThumb) extractDominantColor(newThumb)
+}, { immediate: true })
 import { 
   Play, 
   Pause, 
@@ -12,8 +58,6 @@ import {
   ChevronDown
 } from 'lucide-vue-next'
 import DownloadButton from './DownloadButton.vue'
-
-const playerStore = usePlayerStore()
 
 const props = defineProps({
   isExpanded: {
@@ -56,7 +100,12 @@ const handleClose = () => {
 
 <template>
   <Transition name="expand">
-    <div v-if="isExpanded" class="expanded-player" @click.self="handleClose">
+    <div 
+      v-if="isExpanded" 
+      class="expanded-player" 
+      :style="{ '--bg-color': backgroundColor }"
+      @click.self="handleClose"
+    >
       <div class="album-background" :style="{
         backgroundImage: `url(${playerStore.currentTrack?.thumbnail || ''})`
       }"></div>
@@ -188,13 +237,14 @@ const handleClose = () => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: #000;
+  background-color: var(--bg-color, #000);
   z-index: 2000;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   height: 100vh;
   height: 100dvh; 
+  transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .album-background {
@@ -218,11 +268,9 @@ const handleClose = () => {
   bottom: 0;
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.95) 0%,
-    rgba(0, 0, 0, 0.7) 20%,
-    rgba(0, 0, 0, 0.4) 50%,
-    rgba(0, 0, 0, 0.7) 80%,
-    rgba(0, 0, 0, 0.95) 100%
+    rgba(0, 0, 0, 0.4) 0%,
+    rgba(0, 0, 0, 0.2) 40%,
+    rgba(0, 0, 0, 0.6) 100%
   );
   z-index: 2;
 }
@@ -410,12 +458,7 @@ const handleClose = () => {
 }
 
 .progress-container {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 16px;
-  border-radius: 16px;
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  padding: 8px 4px; /* Reducido al quitar el fondo */
 }
 
 .progress-slider {
@@ -465,13 +508,8 @@ const handleClose = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  background: rgba(0, 0, 0, 0.25);
-  padding: 18px;
-  border-radius: 24px;
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  gap: 24px; /* Un poco más de espacio ahora que no tiene bordes */
+  padding: 8px;
 }
 
 .control-btn {
@@ -518,11 +556,6 @@ const handleClose = () => {
   flex-shrink: 0;
   text-align: center;
   padding: 12px;
-  background: rgba(0, 0, 0, 0.3);
-  border-radius: 16px;
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
   margin-top: auto;
 }
 
