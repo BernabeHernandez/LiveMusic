@@ -204,9 +204,11 @@ const formatDuration = (seconds) => {
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.song-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-2px);
+@media (hover: hover) {
+  .song-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-2px);
+  }
 }
 
 .song-card.is-playing {
@@ -243,9 +245,19 @@ const formatDuration = (seconds) => {
   border-radius: 6px;
 }
 
-.song-card:hover .play-overlay,
-.song-card:active .play-overlay {
-  opacity: 1;
+@media (hover: hover) {
+  .song-card:hover .play-overlay,
+  .song-card:active .play-overlay {
+    opacity: 1;
+  }
+}
+
+/* Ensure play overlay is visible on touch for current song only if desired, 
+   but for the double-tap fix, we want to avoid hover triggers on touch */
+@media (hover: none) {
+  .song-card.is-playing .play-overlay {
+    opacity: 1;
+  }
 }
 
 .play-icon {

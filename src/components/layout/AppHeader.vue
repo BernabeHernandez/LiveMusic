@@ -329,7 +329,7 @@ onMounted(loadLastSearch)
   }
 
   .search-input {
-    font-size: 0.85rem;
+    font-size: 16px;
     padding: 8px 36px 8px 38px;
   }
 }

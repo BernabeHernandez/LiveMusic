@@ -629,7 +629,12 @@ onUnmounted(() => {
   -webkit-tap-highlight-color: transparent;
 }
 
-.song-card:hover,
+@media (hover: hover) {
+  .song-card:hover {
+    background: #282828;
+  }
+}
+
 .song-card.is-playing {
   background: #282828;
 }
@@ -663,9 +668,17 @@ onUnmounted(() => {
   border-radius: 6px;
 }
 
-.song-card:hover .play-overlay,
-.song-card:active .play-overlay {
-  opacity: 1;
+@media (hover: hover) {
+  .song-card:hover .play-overlay,
+  .song-card:active .play-overlay {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .song-card.is-playing .play-overlay {
+    opacity: 1;
+  }
 }
 
 .play-icon {
@@ -692,8 +705,16 @@ onUnmounted(() => {
   opacity: 0;
 }
 
-.song-card:hover .favorite-badge {
-  opacity: 1;
+@media (hover: hover) {
+  .song-card:hover .favorite-badge {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .favorite-badge {
+    opacity: 1;
+  }
 }
 
 .favorite-badge.is-favorite {
