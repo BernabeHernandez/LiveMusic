@@ -94,28 +94,13 @@ const loadSearchState = () => {
 }
 
 const preloadAudioUrls = async (items) => {
-  const itemsToPreload = items.slice(0, PRELOAD_COUNT);
-  
-  console.log(`Pre-cargando URLs de audio para ${itemsToPreload.length} canciones...`);
-  
-  const preloadPromises = itemsToPreload.map(async (item) => {
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
-      
-      await fetch(`${API_URL}/api/audio/${item.videoId}`, {
-        signal: controller.signal,
-        priority: 'low'
-      });
-      
-      clearTimeout(timeoutId);
-      console.log(`Pre-cargado: ${item.title.substring(0, 30)}...`);
-    } catch (err) {
-    }
-  });
-  
-  await Promise.allSettled(preloadPromises);
-  console.log(`Pre-carga completada`);
+  playerStore.prefetchTracks(items.map(item => ({
+    videoId: item.videoId || item.url?.split('v=')[1]?.split('&')[0] || item.url?.split('/').pop(),
+    title: item.title,
+    artist: item.artist || item.uploader || 'YouTube',
+    thumbnail: item.thumbnail,
+    duration: item.duration || 0
+  })), 3);
 };
 
 const search = async (loadMore = false) => {
@@ -285,7 +270,7 @@ const playTrack = (item, index) => {
 
   playerStore.setQueue(tracksQueue, index)
   
-  const nextItems = results.value.slice(index + 1, index + 1 + PRELOAD_COUNT);
+  const nextItems = results.value.slice(index + 1, index + 4);
   if (nextItems.length > 0) {
     preloadAudioUrls(nextItems);
   }

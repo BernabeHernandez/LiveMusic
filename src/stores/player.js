@@ -24,6 +24,7 @@ export const usePlayerStore = defineStore('player', {
     favorites: [],
     activeLocalObjectUrl: null,
     prefetchedData: new Map(), // { videoId: { audioUrl, duration, info } }
+    pendingPrefetches: new Set(), // Track in-flight prefetches to avoid duplicates
     currentAbortController: null
   }),
 
@@ -315,34 +316,33 @@ export const usePlayerStore = defineStore('player', {
           const prefetched = this.prefetchedData.get(targetVideoId);
 
           if (prefetched) {
-            console.log('⚡ Reproduciendo desde PREFETCH');
+            console.log('⚡ Reproduciendo desde PREFETCH:', targetVideoId);
             audioSourceUrl = prefetched.audioUrl;
             this.backendDuration = prefetched.duration;
             if (prefetched.info && this.currentTrack.videoId === targetVideoId) {
               this.currentTrack.title = prefetched.info.title || this.currentTrack.title;
-              this.currentTrack.artist = prefetched.info.uploader || this.currentTrack.artist;
+              this.currentTrack.artist = prefetched.info.artist || prefetched.info.uploader || this.currentTrack.artist;
               this.currentTrack.thumbnail = this.upgradeThumbnail(prefetched.info.thumbnail || this.currentTrack.thumbnail);
               this.currentTrack.duration = prefetched.info.duration || this.currentTrack.duration;
               this.queue[targetIndex] = { ...this.currentTrack };
             }
             this.prefetchedData.delete(targetVideoId);
+            console.log('  - Pre-fetch consumido');
           } else {
-            console.log('Buscando URL de audio...');
-
-            // Primero intentamos obtener el audio, que es lo CRÍTICO
+            console.log('  - Buscando URL en backend:', targetVideoId);
             try {
               const authStore = useAuthStore();
               const userIdParam = authStore.isAuthenticated() ? `?userId=${authStore.user._id}` : '';
               const audioResponse = await fetch(`${API_URL}/api/audio/${targetVideoId}${userIdParam}`, { signal });
               const data = await audioResponse.json();
 
+              console.log('  - Respuesta backend recibida:', !!data.audioUrl);
               if (!data.audioUrl) throw new Error('No audio URL');
 
               audioSourceUrl = data.audioUrl;
               this.backendDuration = data.duration || 0;
 
               // Actualizamos info básica si no la tenemos
-              // Metadata en segundo plano con aislamiento
               fetch(`${API_URL}/api/video-info/${targetVideoId}`, { signal })
                 .then(r => r.json())
                 .then(info => {
@@ -374,23 +374,25 @@ export const usePlayerStore = defineStore('player', {
           this.progress = 0;
           this.durationFixed = false;
 
-          console.log('Duración del backend:', this.backendDuration, 'segundos');
-
+          console.log('  - Estableciendo audio.src:', audioSourceUrl.substring(0, 50) + '...');
           this.audio.src = audioSourceUrl;
 
           try {
             await this.audio.play();
+            console.log('  - Reproducción iniciada');
             this.isPlaying = true;
             this.updateMediaSession();
             this.prefetchNextTrack();
           } catch (playError) {
-            if (playError.name !== 'AbortError') throw playError;
+            if (playError.name !== 'AbortError') {
+              console.error('Error en audio.play():', playError);
+              throw playError;
+            }
           }
         }
       } catch (error) {
         if (error.name === 'AbortError') return;
         console.error('Fatal playback error:', error);
-        // Omitimos el alert por petición del usuario
       }
     },
 
@@ -516,43 +518,57 @@ export const usePlayerStore = defineStore('player', {
       }
     },
 
-    async prefetchNextTrack() {
-      const nextIndex = this.currentIndex + 1;
-      if (nextIndex < this.queue.length) {
-        const nextTrack = this.queue[nextIndex];
+    async prefetchTracks(tracks, limit = 3) {
+      if (!tracks || tracks.length === 0) return;
 
-        // No pre-cargar si ya está en caché o descargado
-        if (this.prefetchedData.has(nextTrack.videoId)) return;
+      const toPrefetch = tracks.slice(0, limit);
+      console.log(`🚀 Iniciando pre-carga inteligente para ${toPrefetch.length} canciones...`);
 
-        console.log('🚀 Pre-cargando siguiente canción:', nextTrack.title);
+      for (const track of toPrefetch) {
+        const vid = track.videoId;
+        // No pre-cargar si ya está en caché, descargado o ya tiene una petición pendiente
+        if (this.prefetchedData.has(vid)) continue;
+        if (this.pendingPrefetches.has(vid)) continue;
+        if (this.currentTrack?.videoId === vid) continue;
 
         try {
-          // Primero revisar si está descargada. Si lo está, no necesitamos pre-cargar de red.
-          const isDownloaded = await dbService.getDownloadMetadata(nextTrack.videoId);
+          this.pendingPrefetches.add(vid);
+          // Revisar si está descargada
+          const isDownloaded = await dbService.isDownloaded(vid);
           if (isDownloaded) {
-            console.log('Next track is downloaded, skipping network prefetch');
-            return;
+            this.pendingPrefetches.delete(vid);
+            continue;
           }
+
+          console.log('  - Lote pre-carga:', track.title);
 
           const authStore = useAuthStore();
           const userIdParam = authStore.isAuthenticated() ? `?userId=${authStore.user._id}` : '';
 
-          const [audioRes, infoRes] = await Promise.all([
-            fetch(`${API_URL}/api/audio/${nextTrack.videoId}${userIdParam}`).then(r => r.json()),
-            fetch(`${API_URL}/api/video-info/${nextTrack.videoId}`).then(r => r.json())
-          ]);
+          // Solo pedimos el audio, la info la sacamos del track si existe
+          const audioRes = await fetch(`${API_URL}/api/audio/${track.videoId}${userIdParam}`).then(r => r.json());
 
           if (audioRes.audioUrl) {
-            this.prefetchedData.set(nextTrack.videoId, {
+            this.prefetchedData.set(vid, {
               audioUrl: audioRes.audioUrl,
               duration: audioRes.duration,
-              info: infoRes
+              info: track // Usamos la info que ya tenemos
             });
-            console.log('✅ Pre-carga lista para:', nextTrack.title);
+            console.log('    ✅ Listo:', vid);
           }
         } catch (err) {
-          console.warn('Error en pre-carga:', err);
+          console.warn('  - Error en pre-carga de:', track.title, err.message);
+        } finally {
+          this.pendingPrefetches.delete(vid);
         }
+      }
+    },
+
+    async prefetchNextTrack() {
+      const nextIndex = this.currentIndex + 1;
+      if (nextIndex < this.queue.length) {
+        const nextTrack = this.queue[nextIndex];
+        await this.prefetchTracks([nextTrack], 1);
       }
     },
 

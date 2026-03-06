@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onMounted } from 'vue'
 import { usePlayerStore } from '../stores/player'
 import { Play, Heart, Trash2, Music } from 'lucide-vue-next'
 
@@ -7,6 +7,12 @@ const playerStore = usePlayerStore()
 
 const favorites = computed(() => playerStore.favorites)
 const hasFavorites = computed(() => favorites.value.length > 0)
+
+onMounted(() => {
+  if (hasFavorites.value) {
+    playerStore.prefetchTracks(favorites.value, 3)
+  }
+})
 
 const playTrack = (track, index) => {
   playerStore.playFavorites(index)
