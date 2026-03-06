@@ -1,5 +1,5 @@
 <script setup>
-import { X, DownloadCloud, LogOut, Home, Heart, ListMusic } from 'lucide-vue-next'
+import { X, DownloadCloud, LogOut, Home, Heart, ListMusic, Activity } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
@@ -52,6 +52,10 @@ const closeSidebar = () => {
       <router-link to="/downloads" class="nav-item" @click="closeSidebar">
         <DownloadCloud :size="20" class="mr-3" />
         <span>Descargas</span>
+      </router-link>
+      <router-link to="/data-usage" class="nav-item" @click="closeSidebar">
+        <Activity :size="20" class="mr-3" />
+        <span>Uso de Datos</span>
       </router-link>
     </nav>
 

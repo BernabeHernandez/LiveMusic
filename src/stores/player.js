@@ -331,7 +331,9 @@ export const usePlayerStore = defineStore('player', {
 
             // Primero intentamos obtener el audio, que es lo CRÍTICO
             try {
-              const audioResponse = await fetch(`${API_URL}/api/audio/${targetVideoId}`, { signal });
+              const authStore = useAuthStore();
+              const userIdParam = authStore.isAuthenticated() ? `?userId=${authStore.user._id}` : '';
+              const audioResponse = await fetch(`${API_URL}/api/audio/${targetVideoId}${userIdParam}`, { signal });
               const data = await audioResponse.json();
 
               if (!data.audioUrl) throw new Error('No audio URL');
@@ -532,8 +534,11 @@ export const usePlayerStore = defineStore('player', {
             return;
           }
 
+          const authStore = useAuthStore();
+          const userIdParam = authStore.isAuthenticated() ? `?userId=${authStore.user._id}` : '';
+
           const [audioRes, infoRes] = await Promise.all([
-            fetch(`${API_URL}/api/audio/${nextTrack.videoId}`).then(r => r.json()),
+            fetch(`${API_URL}/api/audio/${nextTrack.videoId}${userIdParam}`).then(r => r.json()),
             fetch(`${API_URL}/api/video-info/${nextTrack.videoId}`).then(r => r.json())
           ]);
 

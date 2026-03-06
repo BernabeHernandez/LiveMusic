@@ -38,6 +38,11 @@ const routes = [
     component: () => import('@/views/Downloads.vue')
   },
   {
+    path: '/data-usage',
+    name: 'data-usage',
+    component: () => import('@/views/DataUsageView.vue')
+  },
+  {
     path: '/login',
     name: 'login',
     component: () => import('@/views/Login.vue'),

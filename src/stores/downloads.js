@@ -8,7 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 export const useDownloadsStore = defineStore('downloads', () => {
     const downloadedTracks = ref([]);
-    const activeDownloads = ref(new Set()); // Para saber cuáles se están descargando
+    const activeDownloads = ref(new Set());
 
     async function loadDownloads() {
         const authStore = useAuthStore();
@@ -18,29 +18,34 @@ export const useDownloadsStore = defineStore('downloads', () => {
         }
 
         try {
-            // 1. Cargar lo que hay localmente
+            // 1. Cargar lo que hay localmente para rapidez
             const localTracks = await dbService.getAllDownloads();
-            const localVideoIds = new Set(localTracks.map(t => t.videoId));
-
-            // Mostrar locales inicialmente para rapidez
             downloadedTracks.value = localTracks;
 
             // 2. Traer la lista del backend (la fuente de la verdad para este usuario)
+            console.log(`Buscando descargas para usuario: ${authStore.user._id}`);
             const response = await axios.get(`${API_URL}/api/downloads?userId=${authStore.user._id}`);
             const serverTracks = response.data.downloads || [];
+            console.log(`Servidor respondió con ${serverTracks.length} canciones.`);
 
-            let needsLocalReload = false;
+            // Actualizar la vista con la metadata del servidor inmediatamente
+            // Esto asegura que el usuario vea sus canciones aunque el blob tarde en bajar
+            downloadedTracks.value = serverTracks;
 
-            // 3. Sincronizar: Si el server tiene una canción que no está en IndexedDB
+            // 3. Sincronizar Blobs a IndexedDB en segundo plano
+            const localVideoIds = new Set(localTracks.map(t => t.videoId));
+            let syncCount = 0;
+
             for (const serverTrack of serverTracks) {
                 if (!localVideoIds.has(serverTrack.videoId)) {
-                    console.log(`Sincronizando canción faltante: ${serverTrack.title}`);
+                    console.log(`Sincronizando blob para: ${serverTrack.title}`);
                     try {
                         activeDownloads.value.add(serverTrack.videoId);
 
-                        // Descargar silenciosamente el blob usando el backend
-                        const streamResponse = await axios.get(`${API_URL}/api/downloads/${serverTrack.videoId}/stream?userId=${authStore.user._id}`, {
-                            responseType: 'blob'
+                        const fetchUrl = `${API_URL}/api/downloads/${serverTrack.videoId}/stream?userId=${authStore.user._id}`;
+                        const streamResponse = await axios.get(fetchUrl, {
+                            responseType: 'blob',
+                            timeout: 60000 // 60s timeout
                         });
 
                         await dbService.saveDownload({
@@ -51,32 +56,31 @@ export const useDownloadsStore = defineStore('downloads', () => {
                             duration: serverTrack.duration
                         }, streamResponse.data);
 
-                        needsLocalReload = true;
+                        syncCount++;
                     } catch (syncErr) {
-                        console.error(`Error sincronizando ${serverTrack.videoId}:`, syncErr);
+                        console.error(`Error sincronizando blob de ${serverTrack.videoId}:`, syncErr.message);
                     } finally {
                         activeDownloads.value.delete(serverTrack.videoId);
                     }
                 }
             }
 
-            // 4. Limpieza (opcional): si IndexedDB tiene algo que no está en el user backend (ej: otro user lo borró de mongo)
+            // 4. Limpieza de locales huérfanos
             const serverVideoIds = new Set(serverTracks.map(t => t.videoId));
             for (const localTrack of localTracks) {
                 if (!serverVideoIds.has(localTrack.videoId)) {
                     console.log(`Borrando local huérfano: ${localTrack.title}`);
                     await dbService.removeDownload(localTrack.videoId);
-                    needsLocalReload = true;
                 }
             }
 
-            if (needsLocalReload) {
-                downloadedTracks.value = await dbService.getAllDownloads();
+            if (syncCount > 0) {
+                console.log(`Sincronización completada: ${syncCount} blobs nuevos.`);
             }
 
         } catch (error) {
             console.error('Error al cargar y sincronizar descargas:', error);
-            // Si falla la red, quedarnos con los locales
+            // Fallback a locales si falla la red
             downloadedTracks.value = await dbService.getAllDownloads();
         }
     }
@@ -95,11 +99,16 @@ export const useDownloadsStore = defineStore('downloads', () => {
             activeDownloads.value.add(track.videoId);
 
             // 1. Pedir al backend que descargue la canción
-            await axios.post(`${API_URL}/api/downloads/${track.videoId}?userId=${authStore.user._id}`);
+            const downloadRes = await axios.post(`${API_URL}/api/downloads/${track.videoId}?userId=${authStore.user._id}`);
+            const downloadData = downloadRes.data.download;
 
-            // 2. Traer el archivo ya procesado del servidor (stream en formato m4a)
-            const response = await axios.get(`${API_URL}/api/downloads/${track.videoId}/stream?userId=${authStore.user._id}`, {
-                responseType: 'blob' // Es vital pedirlo como BLOB
+            // 2. Traer el archivo ya procesado (Usamos el proxy para evitar CORS)
+            const fetchUrl = `${API_URL}/api/downloads/${track.videoId}/stream?userId=${authStore.user._id}`;
+            console.log(`Obteniendo blob final (Proxy): ${fetchUrl}`);
+
+            const response = await axios.get(fetchUrl, {
+                responseType: 'blob',
+                timeout: 120000 // 2 min para descargas directas
             });
 
             // 3. Guardar en IndexedDB
@@ -125,16 +134,12 @@ export const useDownloadsStore = defineStore('downloads', () => {
         const authStore = useAuthStore();
 
         try {
-            // Borrar de IndexedDB
             await dbService.removeDownload(videoId);
-
-            // Intentar borrar del Backend (para liberar espacio localmente)
             if (authStore.user) {
                 axios.delete(`${API_URL}/api/downloads/${videoId}?userId=${authStore.user._id}`).catch(err => {
                     console.warn('No se pudo borrar del backend:', err);
                 });
             }
-
             await loadDownloads();
         } catch (error) {
             console.error(`Error eliminando la canción ${videoId}:`, error);
