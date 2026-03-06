@@ -96,6 +96,48 @@ const formatTime = (seconds) => {
 const handleClose = () => {
   emit('close')
 }
+
+// Swipe to close logic
+const startY = ref(0)
+const currentDeltaY = ref(0)
+const isDragging = ref(false)
+
+const handleTouchStart = (e) => {
+  // Solo permitir swipe si no estamos interactuando con otros elementos táctiles específicos (opcional)
+  startY.value = e.touches[0].clientY
+  isDragging.value = true
+}
+
+const handleTouchMove = (e) => {
+  if (!isDragging.value) return
+  const currentY = e.touches[0].clientY
+  const deltaY = currentY - startY.value
+  
+  // Solo permitir deslizar hacia abajo
+  if (deltaY > 0) {
+    // Aplicar un poco de resistencia al final opcionalmente, pero aquí 1:1 es común para este gesto
+    currentDeltaY.value = deltaY
+    
+    // Evitar scroll del body mientras se desliza el reproductor
+    if (e.cancelable) e.preventDefault()
+  }
+}
+
+const handleTouchEnd = () => {
+  if (!isDragging.value) return
+  
+  isDragging.value = false
+  
+  // Umbral para cerrar (150px o 20% de la pantalla)
+  const threshold = Math.min(window.innerHeight * 0.2, 150)
+  
+  if (currentDeltaY.value > threshold) {
+    handleClose()
+  }
+  
+  // El reset se hace con la transición definida en los estilos
+  currentDeltaY.value = 0
+}
 </script>
 
 <template>
@@ -111,7 +153,16 @@ const handleClose = () => {
       }"></div>
       
       <div class="background-overlay"></div>
-      <div class="player-layout">
+      <div 
+        class="player-layout"
+        :style="{ 
+          transform: `translateY(${currentDeltaY}px)`,
+          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)'
+        }"
+        @touchstart="handleTouchStart"
+        @touchmove="handleTouchMove"
+        @touchend="handleTouchEnd"
+      >
         <div class="player-header">
           <button @click="handleClose" class="close-button">
             <ChevronDown :size="24" />
