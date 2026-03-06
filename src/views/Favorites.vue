@@ -287,8 +287,10 @@ const formatDate = (dateString) => {
   align-items: center;
 }
 
-.track-item:hover {
-  background: rgba(255, 255, 255, 0.05);
+@media (hover: hover) {
+  .track-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+  }
 }
 
 .track-item.playing {
@@ -324,13 +326,24 @@ const formatDate = (dateString) => {
   box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
-.track-item:hover .play-button-small {
-  opacity: 1;
-  transform: scale(1.1);
+@media (hover: hover) {
+  .track-item:hover .play-button-small {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+
+  .track-item:hover .track-number {
+    opacity: 0;
+  }
 }
 
-.track-item:hover .track-number {
-  opacity: 0;
+@media (hover: none) {
+  .playing .track-number {
+    opacity: 0;
+  }
+  .playing .play-button-small {
+    opacity: 1;
+  }
 }
 
 .col-title {
@@ -401,9 +414,17 @@ const formatDate = (dateString) => {
   opacity: 0.8;
 }
 
-.remove-button:hover {
-  opacity: 1;
-  transform: scale(1.1);
+@media (hover: hover) {
+  .remove-button:hover {
+    opacity: 1;
+    transform: scale(1.1);
+  }
+}
+
+@media (hover: none) {
+  .remove-button {
+    opacity: 1;
+  }
 }
 
 .empty-state {

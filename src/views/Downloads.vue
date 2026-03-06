@@ -288,8 +288,16 @@ const formatDuration = (seconds) => {
   opacity: 0;
 }
 
-.song-card:hover .favorite-badge {
-  opacity: 1;
+@media (hover: hover) {
+  .song-card:hover .favorite-badge {
+    opacity: 1;
+  }
+}
+
+@media (hover: none) {
+  .favorite-badge {
+    opacity: 1;
+  }
 }
 
 .favorite-badge:hover {
