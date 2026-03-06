@@ -134,12 +134,16 @@ export const useDownloadsStore = defineStore('downloads', () => {
         const authStore = useAuthStore();
 
         try {
+            // 1. Eliminar de IndexedDB local primero para feedback instantáneo UI
             await dbService.removeDownload(videoId);
+
+            // 2. Eliminar del backend (Disco + Cloud + DB) y esperar confirmación
             if (authStore.user) {
-                axios.delete(`${API_URL}/api/downloads/${videoId}?userId=${authStore.user._id}`).catch(err => {
-                    console.warn('No se pudo borrar del backend:', err);
-                });
+                console.log(`Solicitando eliminación al backend para: ${videoId}`);
+                await axios.delete(`${API_URL}/api/downloads/${videoId}?userId=${authStore.user._id}`);
             }
+
+            // 3. Recargar lista para estar seguros
             await loadDownloads();
         } catch (error) {
             console.error(`Error eliminando la canción ${videoId}:`, error);

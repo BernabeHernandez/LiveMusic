@@ -152,7 +152,15 @@ const sortedDays = computed(() => {
 const todayUsage = computed(() => {
   const today = new Date().toISOString().split('T')[0];
   const stats = dailyStats.value.find(d => d.date === today);
-  return stats || { streaming: 0, download: 0, total: 0, ...stats, total: (stats ? stats.streaming + stats.download : 0) };
+  
+  if (!stats) {
+    return { streaming: 0, download: 0, total: 0 };
+  }
+  
+  return {
+    ...stats,
+    total: (stats.streaming || 0) + (stats.download || 0)
+  };
 });
 
 const maxDaily = computed(() => {
@@ -186,10 +194,14 @@ const fetchUsage = async () => {
 };
 
 const formatBytes = (bytes) => {
-  if (bytes === 0) return '0 KB';
+  if (bytes === null || bytes === undefined || isNaN(bytes) || bytes < 0) return '0 B';
+  if (bytes === 0) return '0 B';
+  
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  // Evitar log(0)
   const i = Math.floor(Math.log(bytes) / Math.log(k));
+  
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 };
 
