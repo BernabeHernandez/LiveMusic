@@ -36,6 +36,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     function logout() {
+        // Detener música al cerrar sesión
+        import('./player').then(m => {
+            const playerStore = m.usePlayerStore();
+            playerStore.cleanup();
+        }).catch(() => { });
+
         user.value = null;
         localStorage.removeItem('user');
         router.push('/login');

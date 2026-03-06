@@ -217,8 +217,11 @@ export const usePlayerStore = defineStore('player', {
         });
 
         this.audio.addEventListener('error', (e) => {
+          // Si el src está vacío, no es un error real de reproducción
+          if (!this.audio.src || this.audio.src === window.location.href) return;
+
           console.error('Error al reproducir audio:', e);
-          alert('Error al reproducir esta canción. Puede estar restringida o no disponible.');
+          // Omitimos el alert por petición del usuario
           this.nextTrack();
         });
 
@@ -385,7 +388,7 @@ export const usePlayerStore = defineStore('player', {
       } catch (error) {
         if (error.name === 'AbortError') return;
         console.error('Fatal playback error:', error);
-        alert('Disculpa, no pudimos reproducir esta canción. Revisa tu conexión o intenta con otra.');
+        // Omitimos el alert por petición del usuario
       }
     },
 

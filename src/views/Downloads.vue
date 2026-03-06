@@ -14,9 +14,9 @@
       <button 
         v-if="downloadsStore.downloadedTracks.length > 0"
         @click="playAll"
-        class="hidden md:flex items-center justify-center w-14 h-14 rounded-full bg-[#1db954] hover:scale-105 transition-transform shadow-[0_0_20px_rgba(29,185,84,0.3)] text-white ml-auto"
+        class="play-all-btn"
       >
-        <Play class="w-6 h-6 ml-1" fill="currentColor" />
+        <Play :size="24" fill="currentColor" />
       </button>
     </div>
 
@@ -30,7 +30,7 @@
       <p class="text-[var(--live-text-secondary)] max-w-sm mb-8">
         Guarda tus canciones favoritas para escucharlas cuando no tengas conexión a internet.
       </p>
-      <router-link to="/search" class="px-8 py-3 rounded-full bg-[#1db954] text-white font-medium hover:bg-opacity-90 transition-colors">
+      <router-link to="/search" class="cta-button">
         Buscar música
       </router-link>
     </div>
@@ -141,10 +141,46 @@ const formatDuration = (seconds) => {
 
 .search-header {
   display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2.5rem;
+  padding-top: 1rem;
+}
+
+.play-all-btn {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #ff2d55;
+  color: white;
+  border: none;
+  cursor: pointer;
+  display: flex;
   align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1.25rem;
-  padding: 0.25rem 0;
+  justify-content: center;
+  box-shadow: 0 8px 20px rgba(255, 45, 85, 0.3);
+  transition: all 0.3s ease;
+}
+
+.play-all-btn:hover {
+  background: #ff375f;
+  transform: scale(1.05);
+}
+
+.cta-button {
+  background: #ff2d55;
+  color: white;
+  padding: 12px 32px;
+  border-radius: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all 0.3s;
+}
+
+.cta-button:hover {
+  background: #ff375f;
+  transform: translateY(-2px);
 }
 
 .results-grid {
@@ -157,21 +193,25 @@ const formatDuration = (seconds) => {
 .song-card {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  padding: 0.65rem;
-  background: #181818;
-  border-radius: 8px;
+  gap: 1rem;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 12px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
   min-height: 72px;
-  touch-action: manipulation;
-  -webkit-tap-highlight-color: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.song-card:hover,
+.song-card:hover {
+  background: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
 .song-card.is-playing {
-  background: #282828;
+  background: rgba(255, 45, 85, 0.1);
+  border-color: rgba(255, 45, 85, 0.3);
 }
 
 .song-card:active {
@@ -194,7 +234,7 @@ const formatDuration = (seconds) => {
 .play-overlay {
   position: absolute;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -209,8 +249,14 @@ const formatDuration = (seconds) => {
 }
 
 .play-icon {
-  color: white;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.6));
+  background: white;
+  color: black;
+  width: 32px; /* Ensure consistent size for circular button */
+  height: 32px; /* Ensure consistent size for circular button */
+  border-radius: 50%;
+  padding: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  filter: none; /* Remove previous filter */
 }
 
 .favorite-badge {
@@ -301,7 +347,7 @@ const formatDuration = (seconds) => {
 
 .bar {
   width: 3px;
-  background: #1db954;
+  background: #ff2d55;
   border-radius: 3px;
   animation: equalize 0.9s ease-in-out infinite;
 }

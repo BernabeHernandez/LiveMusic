@@ -157,10 +157,11 @@ const formatDate = (dateString) => {
 }
 
 .header {
-  background: linear-gradient(180deg, #5e1d8c 0%, #1a1a1a 100%);
-  border-radius: 12px;
-  padding: 40px;
+  background: linear-gradient(180deg, rgba(255, 45, 85, 0.15) 0%, #1a1a1a 100%);
+  border-radius: 20px;
+  padding: 60px 40px;
   margin-bottom: 30px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .header-content {
@@ -170,16 +171,16 @@ const formatDate = (dateString) => {
 }
 
 .header-icon {
-  width: 150px;
-  height: 150px;
-  background: linear-gradient(135deg, #ff0844 0%, #ffb199 100%);
-  border-radius: 12px;
+  width: 180px;
+  height: 180px;
+  background: linear-gradient(135deg, #ff2d55 0%, #ff375f 100%);
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   flex-shrink: 0;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 15px 35px rgba(255, 45, 85, 0.3);
 }
 
 .header-info {
@@ -215,23 +216,25 @@ const formatDate = (dateString) => {
 }
 
 .play-all-button {
-  background: #1db954;
+  background: #ff2d55;
   border: none;
-  padding: 12px 32px;
-  border-radius: 24px;
-  font-size: 14px;
+  padding: 12px 36px;
+  border-radius: 12px;
+  font-size: 15px;
   font-weight: 600;
   color: white;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 8px;
-  transition: all 0.2s;
+  gap: 10px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(255, 45, 85, 0.3);
 }
 
 .play-all-button:hover {
-  background: #1ed760;
-  transform: scale(1.05);
+  background: #ff375f;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 45, 85, 0.4);
 }
 
 .clear-button {
@@ -285,11 +288,11 @@ const formatDate = (dateString) => {
 }
 
 .track-item:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .track-item.playing {
-  background: rgba(29, 185, 84, 0.2);
+  background: rgba(255, 45, 85, 0.1);
 }
 
 .col-number {
@@ -306,17 +309,24 @@ const formatDate = (dateString) => {
 
 .play-button-small {
   position: absolute;
-  background: transparent;
+  background: white;
   border: none;
-  color: white;
+  color: black;
   cursor: pointer;
-  padding: 4px;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .track-item:hover .play-button-small {
   opacity: 1;
+  transform: scale(1.1);
 }
 
 .track-item:hover .track-number {
@@ -383,12 +393,12 @@ const formatDate = (dateString) => {
 .remove-button {
   background: transparent;
   border: none;
-  color: #1db954;
+  color: #ff2d55;
   cursor: pointer;
   padding: 8px;
   border-radius: 4px;
   transition: all 0.2s;
-  opacity: 0.7;
+  opacity: 0.8;
 }
 
 .remove-button:hover {

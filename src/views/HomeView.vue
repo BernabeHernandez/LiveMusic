@@ -76,7 +76,7 @@ const suggestedPlaylists = ref([
     title: 'Top Hits 2024',
     description: 'Lo más escuchado del momento',
     query: 'Top hits 2024',
-    color: '#1db954'
+    color: '#ff2d55'
   },
   {
     title: 'Chill Vibes',
@@ -136,111 +136,100 @@ onMounted(() => {
 
 <template>
   <div class="home-view">
-    <!-- Hero Section -->
+    <!-- Hero Section: Featured Cards -->
     <section class="hero-section">
-      <div class="hero-content">
-        <h1 class="greeting">{{ greeting }}</h1>
-        <p class="hero-subtitle">¿Qué quieres escuchar hoy?</p>
+      <div class="hero-carousel">
+        <div class="featured-card main">
+          <div class="featured-tag">ESTRENO</div>
+          <h1 class="featured-title">{{ greeting }}</h1>
+          <p class="featured-subtitle">Descubre música que te encantará</p>
+          <button class="featured-play-btn" @click="searchMusic('Lo más nuevo')">
+            Escuchar ahora
+          </button>
+        </div>
+        
+        <div class="featured-card secondary" @click="searchMusic('Chill')">
+          <div class="featured-tag">RELAX</div>
+          <h3 class="featured-title-sm">Vibras de Tarde</h3>
+          <p class="featured-subtitle-sm">Perfecto para desconectar</p>
+        </div>
       </div>
-      
-      <div class="quick-actions">
+
+      <div class="quick-pills">
         <div 
-          v-for="search in trendingSearches.slice(0, 4)" 
+          v-for="search in trendingSearches.slice(0, 6)" 
           :key="search.query"
           @click="searchMusic(search.query)"
-          class="quick-action-card"
+          class="nav-pill"
         >
-          <component 
-            :is="search.icon" 
-            :size="24" 
-            :style="{ color: search.color }"
-          />
+          <component :is="search.icon" :size="16" />
           <span>{{ search.query }}</span>
         </div>
       </div>
     </section>
 
-    <section v-if="hasFavorites" class="section favorites-section">
+    <section v-if="hasFavorites" class="section">
       <div class="section-header">
-        <h2 class="section-title">
-          <Heart :size="24" class="section-icon" />
-          Tus Favoritos
-        </h2>
-        <router-link to="/favorites" class="see-all-link">
-          Ver todos
-        </router-link>
+        <h2 class="section-title">Escuchado recientemente</h2>
+        <router-link to="/favorites" class="see-all-link">Ver todo</router-link>
       </div>
 
-      <div class="favorites-grid">
+      <div class="horizontal-scroll">
         <div
           v-for="(track, index) in recentFavorites"
           :key="track.videoId"
           @click="playFavorite(track, index)"
-          class="favorite-card"
-          :class="{ 'is-playing': playerStore.currentTrack?.videoId === track.videoId }"
+          class="media-card"
         >
-          <div class="favorite-thumbnail">
+          <div class="card-image-wrapper">
             <img :src="track.thumbnail" :alt="track.title" />
-            <div class="play-overlay">
-              <div class="play-button-large">
-                <Play :size="28" fill="currentColor" />
-              </div>
+            <div class="card-play-overlay">
+              <Play :size="24" fill="currentColor" />
             </div>
           </div>
-          <div class="favorite-info">
-            <p class="favorite-title">{{ track.title }}</p>
-            <p class="favorite-artist">{{ track.artist }}</p>
+          <div class="card-info">
+            <p class="card-title">{{ track.title }}</p>
+            <p class="card-subtitle">{{ track.artist }}</p>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="section playlists-section">
+    <section class="section">
       <div class="section-header">
-        <h2 class="section-title">
-          <Sparkles :size="24" class="section-icon" />
-          Playlists Recomendadas
-        </h2>
+        <h2 class="section-title">Playlists recomendadas</h2>
       </div>
 
-      <div class="playlists-grid">
+      <div class="horizontal-scroll">
         <div
           v-for="playlist in suggestedPlaylists"
           :key="playlist.title"
           @click="searchMusic(playlist.query)"
-          class="playlist-card"
+          class="playlist-item"
         >
-          <div class="playlist-cover" :style="{ background: playlist.color }">
-            <Music2 :size="48" class="playlist-icon" />
+          <div class="playlist-sq" :style="{ background: `linear-gradient(135deg, ${playlist.color}, rgba(0,0,0,0.4))` }">
+            <Music2 :size="40" />
           </div>
-          <div class="playlist-info">
-            <p class="playlist-title">{{ playlist.title }}</p>
-            <p class="playlist-description">{{ playlist.description }}</p>
-          </div>
+          <p class="item-title">{{ playlist.title }}</p>
+          <p class="item-subtitle">Apple Music</p>
         </div>
       </div>
     </section>
 
-    <section class="section genres-section">
+    <section class="section">
       <div class="section-header">
-        <h2 class="section-title">
-          <Music2 :size="24" class="section-icon" />
-          Explorar por Género
-        </h2>
+        <h2 class="section-title">Explorar por género</h2>
       </div>
-
-      <div class="genres-grid">
+      <div class="horizontal-scroll-lg">
         <div
           v-for="genre in genres"
           :key="genre.name"
           @click="quickPlayGenre(genre)"
-          class="genre-card"
+          class="genre-chip"
           :style="{ background: genre.gradient }"
         >
-          <h3 class="genre-name">{{ genre.name }}</h3>
-          <div class="genre-icon-bg">
-            <Music2 :size="64" class="genre-icon" />
-          </div>
+          <span>{{ genre.name }}</span>
+          <Music2 class="chip-icon" :size="40" />
         </div>
       </div>
     </section>
@@ -299,337 +288,292 @@ onMounted(() => {
 <style scoped>
 .home-view {
   width: 100%;
-  padding-bottom: 40px;
-  animation: fadeIn 0.4s ease-out;
+  padding: 1rem 1.5rem 120px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+/* Hero Carousel */
+.hero-carousel {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding: 10px 0;
+  scrollbar-width: none;
 }
 
-.hero-section {
-  margin-bottom: 48px;
+.hero-carousel::-webkit-scrollbar { display: none; }
+
+.featured-card {
+  flex-shrink: 0;
+  border-radius: 20px;
+  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.hero-content {
-  margin-bottom: 32px;
+.featured-card:hover { transform: scale(1.01); }
+
+.featured-card.main {
+  width: 100%;
+  aspect-ratio: 21/9;
+  background: linear-gradient(135deg, rgba(255, 45, 85, 0.2) 0%, rgba(255, 45, 85, 0.8) 100%);
+  box-shadow: 0 10px 40px rgba(255, 45, 85, 0.2);
 }
 
-.greeting {
+.featured-card.secondary {
+  width: 300px;
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, rgba(88, 86, 214, 0.2) 0%, rgba(88, 86, 214, 0.8) 100%);
+  box-shadow: 0 10px 40px rgba(88, 86, 214, 0.2);
+}
+
+.featured-tag {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 8px;
+}
+
+.featured-title {
   font-size: 3rem;
   font-weight: 800;
-  margin: 0 0 12px 0;
-  background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  letter-spacing: -0.02em;
-  animation: slideDown 0.6s ease-out;
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.hero-subtitle {
-  font-size: 1.25rem;
-  color: #b3b3b3;
   margin: 0;
-  animation: slideDown 0.6s ease-out 0.1s backwards;
+  letter-spacing: -0.04em;
 }
 
-.quick-actions {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 16px;
-  animation: slideUp 0.6s ease-out 0.2s backwards;
+.featured-title-sm {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0;
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.quick-action-card {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 16px 20px;
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
-  cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.quick-action-card:hover {
-  background: rgba(255, 255, 255, 0.1);
-  transform: translateY(-4px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.quick-action-card span {
-  font-weight: 600;
-  font-size: 0.95rem;
-}
-
-/* Section Styles */
-.section {
-  margin-bottom: 48px;
-  animation: fadeIn 0.6s ease-out;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
+.featured-subtitle {
+  font-size: 1.1rem;
+  color: rgba(255, 255, 255, 0.9);
   margin-bottom: 24px;
 }
 
-.section-title {
-  font-size: 1.75rem;
+.featured-play-btn {
+  width: fit-content;
+  background: white;
+  color: black;
+  border: none;
+  padding: 10px 24px;
+  border-radius: 20px;
   font-weight: 700;
-  margin: 0;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Quick Pills */
+.quick-pills {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 5px 0 20px;
+  scrollbar-width: none;
+}
+
+.quick-pills::-webkit-scrollbar { display: none; }
+
+.nav-pill {
+  flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 12px;
-  letter-spacing: -0.01em;
-}
-
-.section-icon {
-  color: #1db954;
-}
-
-.see-all-link {
-  color: #b3b3b3;
-  text-decoration: none;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
   font-size: 0.9rem;
   font-weight: 600;
-  transition: color 0.2s;
-}
-
-.see-all-link:hover {
-  color: #1db954;
-}
-
-/* Favorites Grid */
-.favorites-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 20px;
-}
-
-.favorite-card {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  padding: 16px;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid transparent;
+  transition: all 0.2s;
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.favorite-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.1);
+.nav-pill:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
 }
 
-.favorite-card.is-playing {
-  background: rgba(29, 185, 84, 0.15);
-  border-color: #1db954;
+/* Horizontal Scroll Layouts */
+.horizontal-scroll {
+  display: flex;
+  gap: 20px;
+  overflow-x: auto;
+  padding: 5px 0 15px;
+  margin-right: -1.5rem;
+  scrollbar-width: none;
 }
 
-.favorite-thumbnail {
-  position: relative;
+.horizontal-scroll::-webkit-scrollbar { display: none; }
+
+.media-card {
+  width: 180px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.card-image-wrapper {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
-  margin-bottom: 12px;
+  position: relative;
+  margin-bottom: 10px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
-.favorite-thumbnail img {
+.card-image-wrapper img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.3s;
+  transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-.favorite-card:hover .favorite-thumbnail img {
-  transform: scale(1.05);
-}
+.media-card:hover img { transform: scale(1.05); }
 
-.play-overlay {
+.card-play-overlay {
   position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s;
-}
-
-.favorite-card:hover .play-overlay {
-  opacity: 1;
-}
-
-.play-button-large {
-  width: 56px;
-  height: 56px;
-  background: #1db954;
+  bottom: 10px;
+  right: 10px;
+  width: 36px;
+  height: 36px;
+  background: white;
+  color: black;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #000;
-  box-shadow: 0 8px 24px rgba(29, 185, 84, 0.4);
-  transition: transform 0.2s;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.play-button-large:hover {
-  transform: scale(1.1);
+.media-card:hover .card-play-overlay {
+  opacity: 1;
+  transform: translateY(0);
 }
 
-.favorite-info {
-  padding: 0 4px;
-}
+.card-info { padding: 0 2px; }
 
-.favorite-title {
-  font-size: 0.95rem;
+.card-title {
+  font-size: 0.9rem;
   font-weight: 600;
-  margin: 0 0 4px 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.favorite-artist {
-  font-size: 0.85rem;
-  color: #b3b3b3;
   margin: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-/* Playlists Grid */
-.playlists-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 20px;
+.card-subtitle {
+  font-size: 0.85rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin: 0;
 }
 
-.playlist-card {
-  background: rgba(255, 255, 255, 0.03);
-  border-radius: 12px;
-  padding: 20px;
+.playlist-item {
+  width: 220px;
+  flex-shrink: 0;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 1px solid transparent;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
 }
 
-.playlist-card:hover {
-  background: rgba(255, 255, 255, 0.08);
-  transform: translateY(-4px);
-  border-color: rgba(255, 255, 255, 0.1);
-}
-
-.playlist-cover {
+.playlist-sq {
   width: 100%;
   aspect-ratio: 1;
-  border-radius: 8px;
+  border-radius: 12px;
+  margin-bottom: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  color: white;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
 }
 
-.playlist-icon {
-  color: rgba(255, 255, 255, 0.9);
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
-}
+.item-title { font-weight: 700; margin: 0; font-size: 1rem; }
+.item-subtitle { color: #ff2d55; margin: 0; font-size: 0.85rem; font-weight: 600; }
 
-.playlist-title {
-  font-size: 1rem;
-  font-weight: 700;
-  margin: 0 0 4px 0;
-}
-
-.playlist-description {
-  font-size: 0.85rem;
-  color: #b3b3b3;
-  margin: 0;
-  line-height: 1.4;
-}
-
-/* Genres Grid */
-.genres-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+.horizontal-scroll-lg {
+  display: flex;
   gap: 16px;
+  overflow-x: auto;
+  padding: 5px 0 15px;
+  scrollbar-width: none;
 }
 
-.genre-card {
+.horizontal-scroll-lg::-webkit-scrollbar { display: none; }
+
+.genre-chip {
+  flex-shrink: 0;
+  width: 200px;
+  height: 110px;
+  border-radius: 16px;
+  padding: 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
   position: relative;
-  height: 140px;
-  border-radius: 12px;
-  padding: 16px;
-  cursor: pointer;
   overflow: hidden;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.2);
 }
 
-.genre-card:hover {
-  transform: scale(1.05);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-}
+.genre-chip:hover { transform: scale(1.02); }
 
-.genre-name {
+.genre-chip span {
   font-size: 1.25rem;
   font-weight: 800;
-  margin: 0;
-  position: relative;
-  z-index: 2;
-  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  color: white;
+  z-index: 1;
 }
 
-.genre-icon-bg {
+.chip-icon {
   position: absolute;
-  bottom: -10px;
-  right: -10px;
-  opacity: 0.3;
+  bottom: -5px;
+  right: -5px;
+  opacity: 0.2;
   transform: rotate(-15deg);
 }
 
-.genre-icon {
-  color: rgba(255, 255, 255, 0.8);
+/* Sections */
+.section { margin-bottom: 40px; }
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 16px;
+  padding: 0 2px;
+}
+
+.section-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  margin: 0;
+  letter-spacing: -0.02em;
+}
+
+.see-all-link {
+  color: #ff2d55;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+  .featured-card.main { aspect-ratio: 16/10; }
+  .featured-title { font-size: 2rem; }
+  .home-view { padding: 1rem 1rem 120px; }
 }
 
 /* Trending List */
@@ -685,7 +629,7 @@ onMounted(() => {
 }
 
 .trending-action {
-  color: #1db954;
+  color: #ff2d55;
   opacity: 0;
   transition: opacity 0.2s;
 }
@@ -713,9 +657,9 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(29, 185, 84, 0.1);
+  background: rgba(255, 45, 85, 0.1);
   border-radius: 50%;
-  color: #1db954;
+  color: #ff2d55;
 }
 
 .empty-title {
@@ -736,21 +680,21 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 14px 32px;
-  background: #1db954;
-  color: #000;
+  background: #ff2d55;
+  color: white;
   border: none;
-  border-radius: 24px;
+  border-radius: 12px;
   font-size: 1rem;
-  font-weight: 700;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s;
-  box-shadow: 0 4px 16px rgba(29, 185, 84, 0.3);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(255, 45, 85, 0.3);
 }
 
 .cta-button:hover {
-  background: #1ed760;
+  background: #ff375f;
   transform: translateY(-2px);
-  box-shadow: 0 6px 24px rgba(29, 185, 84, 0.4);
+  box-shadow: 0 6px 24px rgba(255, 45, 85, 0.4);
 }
 
 /* Responsive */
