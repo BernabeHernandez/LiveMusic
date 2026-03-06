@@ -1,5 +1,5 @@
 <script setup>
-import { onMounted, onUnmounted, ref, computed } from 'vue'
+import { onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { usePlayerStore } from '../../../src/stores/player'
 import ExpandedPlayer from '../ExpandedPlayer.vue'
 import { 
@@ -16,6 +16,50 @@ const playerStore = usePlayerStore()
 const audioElement = ref(null)
 const isSeeking = ref(false)
 const isExpanded = ref(false)
+const backgroundColor = ref('#121212')
+
+// Function to extract dominant color from image
+const extractDominantColor = (imageUrl) => {
+  if (!imageUrl) return
+  
+  const img = new Image()
+  img.crossOrigin = 'Anonymous'
+  img.src = imageUrl
+  
+  img.onload = () => {
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+    canvas.width = 10
+    canvas.height = 10
+    
+    context.drawImage(img, 0, 0, 10, 10)
+    const data = context.getImageData(0, 0, 10, 10).data
+    
+    let r = 0, g = 0, b = 0
+    for (let i = 0; i < data.length; i += 4) {
+      r += data[i]
+      g += data[i+1]
+      b += data[i+2]
+    }
+    
+    r = Math.floor(r / (data.length / 4))
+    g = Math.floor(g / (data.length / 4))
+    b = Math.floor(b / (data.length / 4))
+    
+    // darken color significantly for the bar
+    const darkenFactor = 0.45
+    const dr = Math.floor(r * darkenFactor)
+    const dg = Math.floor(g * darkenFactor)
+    const db = Math.floor(b * darkenFactor)
+    
+    backgroundColor.value = `rgb(${dr}, ${dg}, ${db})`
+  }
+}
+
+// Watch for track changes
+watch(() => playerStore.currentTrack?.thumbnail, (newThumb) => {
+  if (newThumb) extractDominantColor(newThumb)
+}, { immediate: true })
 
 const canGoPrevious = computed(() => {
   return playerStore.currentIndex > 0 || playerStore.currentTime > 3
@@ -84,7 +128,11 @@ const formatTime = (seconds) => {
     @close="closeExpandedPlayer"
   />
 
-  <div v-if="playerStore.currentTrack" class="player-bar">
+  <div 
+    v-if="playerStore.currentTrack" 
+    class="player-bar"
+    :style="{ '--bar-bg-color': backgroundColor }"
+  >
     <div class="track-info" @click="expandPlayer">
       <img :src="playerStore.currentTrack.thumbnail" alt="Cover" class="track-thumbnail" />
       <div class="track-details">
@@ -175,15 +223,18 @@ const formatTime = (seconds) => {
   bottom: 0;
   left: 0;
   width: 100%;
-  background: linear-gradient(to top, #000, #111);
+  background: var(--bar-bg-color, #111);
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 30px 15px;
-  border-top: 2px solid #1db954;
-  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+  padding: 12px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08); /* Fino y elegante, no verde */
+  box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5);
   z-index: 1000;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  transition: background-color 0.8s ease;
 }
 
 .track-info {
@@ -247,17 +298,17 @@ const formatTime = (seconds) => {
 }
 
 .favorite-button-mini:hover {
-  color: #1db954;
-  background: rgba(29, 185, 84, 0.1);
+  color: white;
+  background: rgba(255, 255, 255, 0.1);
   transform: scale(1.1);
 }
 
 .favorite-button-mini.is-favorite {
-  color: #1db954;
+  color: #ff4d4d; /* Rojo para favoritos, estilo Apple Music/vibrante */
 }
 
 .favorite-button-mini.is-favorite:hover {
-  color: #ff4444;
+  color: #ff2a2a;
 }
 
 .player-controls {
@@ -295,12 +346,18 @@ const formatTime = (seconds) => {
 
 .progress-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: #1db954;
+  background: white;
   cursor: pointer;
-  transition: transform 0.1s;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+  opacity: 0; /* Oculto por defecto */
+  transition: opacity 0.2s;
+}
+
+.progress-container:hover .progress-slider::-webkit-slider-thumb {
+  opacity: 1; /* Solo aparece al pasar el mouse */
 }
 
 .progress-slider::-webkit-slider-thumb:hover {
@@ -308,22 +365,23 @@ const formatTime = (seconds) => {
 }
 
 .progress-slider::-moz-range-thumb {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
-  background: #1db954;
+  background: white;
   cursor: pointer;
   border: none;
-  transition: transform 0.1s;
+  opacity: 0;
+  transition: opacity 0.2s;
 }
 
-.progress-slider::-moz-range-thumb:hover {
-  transform: scale(1.2);
+.progress-container:hover .progress-slider::-moz-range-thumb {
+  opacity: 1;
 }
 
 .controls {
   display: flex;
-  gap: 8px;
+  gap: 16px; /* Más espacio */
   align-items: center;
   justify-content: center;
 }
@@ -356,28 +414,28 @@ const formatTime = (seconds) => {
 
 .shuffle-button.active,
 .repeat-button.active {
-  color: #1db954;
-  background: #282828;
+  color: #ff4d4d; /* Rojo para estados activos, estilo iOS */
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .play-button {
-  background: #1db954;
+  background: white;
   border: none;
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   cursor: pointer;
-  color: white;
+  color: black;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s;
-  box-shadow: 0 4px 15px rgba(29, 185, 84, 0.4);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
 .play-button:hover {
-  background: #1ed760;
   transform: scale(1.1);
+  background: #f0f0f0;
 }
 
 .queue-info {
