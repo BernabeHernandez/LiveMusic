@@ -35,7 +35,7 @@ p {
 }
 
 .back {
-  color: #1db954;
+  color: #ff2d55;
   text-decoration: none;
   font-weight: 600;
 }

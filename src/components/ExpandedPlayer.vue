@@ -501,7 +501,7 @@ const handleTouchEnd = () => {
 }
 
 .favorite-button.is-favorite {
-  color: #1db954;
+  color: #ff2d55;
 }
 .progress-area {
   flex-shrink: 0;
@@ -516,7 +516,7 @@ const handleTouchEnd = () => {
   width: 100%;
   height: 4px;
   border-radius: 2px;
-  background: linear-gradient(to right, #1db954 var(--progress, 0%), rgba(255, 255, 255, 0.15) var(--progress, 0%));
+  background: linear-gradient(to right, #ff2d55 var(--progress, 0%), rgba(255, 255, 255, 0.15) var(--progress, 0%));
   outline: none;
   cursor: pointer;
   margin-bottom: 10px;
@@ -529,7 +529,7 @@ const handleTouchEnd = () => {
   border-radius: 50%;
   background: white;
   cursor: pointer;
-  border: 3px solid #1db954;
+  border: 3px solid #ff2d55;
 }
 
 .progress-slider::-moz-range-thumb {
@@ -538,7 +538,7 @@ const handleTouchEnd = () => {
   border-radius: 50%;
   background: white;
   cursor: pointer;
-  border: 3px solid #1db954;
+  border: 3px solid #ff2d55;
   border: none;
 }
 
@@ -578,7 +578,7 @@ const handleTouchEnd = () => {
 }
 
 .control-btn.active {
-  color: #1db954;
+  color: #ff2d55;
   background: rgba(29, 185, 84, 0.15);
 }
 

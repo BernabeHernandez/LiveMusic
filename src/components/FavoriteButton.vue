@@ -61,13 +61,13 @@ const toggleFavorite = () => {
 }
 
 .favorite-button:hover {
-  color: #1db954;
+  color: #ff2d55;
   background: rgba(29, 185, 84, 0.1);
   transform: scale(1.1);
 }
 
 .favorite-button.is-favorite {
-  color: #1db954;
+  color: #ff2d55;
 }
 
 .favorite-button.is-favorite:hover {

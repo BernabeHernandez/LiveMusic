@@ -66,7 +66,7 @@ onUnmounted(() => {
 }
 
 .offline-notice.is-online {
-  background: linear-gradient(135deg, #1db954 0%, #1ed760 100%);
+  background: linear-gradient(135deg, #ff2d55 0%, #ff375f 100%);
 }
 
 .notice-content {

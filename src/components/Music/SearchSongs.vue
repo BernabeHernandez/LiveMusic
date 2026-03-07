@@ -485,7 +485,7 @@ onUnmounted(() => {
 }
 
 .search-icon {
-  color: #1db954;
+  color: #ff2d55;
   flex-shrink: 0;
 }
 
@@ -515,7 +515,7 @@ onUnmounted(() => {
 
 .stats-badge {
   background: rgba(29, 185, 84, 0.2);
-  color: #1db954;
+  color: #ff2d55;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
   font-size: 0.75rem;
@@ -704,14 +704,14 @@ onUnmounted(() => {
 
 .favorite-badge.is-favorite {
   opacity: 1;
-  color: #1db954;
+  color: #ff2d55;
   background: rgba(29, 185, 84, 0.2);
 }
 
 .favorite-badge:hover {
   transform: scale(1.15);
   background: rgba(29, 185, 84, 0.3);
-  color: #1db954;
+  color: #ff2d55;
 }
 
 .favorite-badge.is-favorite:hover {
@@ -781,7 +781,7 @@ onUnmounted(() => {
 
 .bar {
   width: 3px;
-  background: #1db954;
+  background: #ff2d55;
   border-radius: 3px;
   animation: equalize 0.9s ease-in-out infinite;
 }

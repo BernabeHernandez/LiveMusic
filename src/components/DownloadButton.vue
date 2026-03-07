@@ -12,7 +12,7 @@
     <!-- Spinner mientras descarga -->
     <div
       v-if="isDownloading"
-      class="animate-spin w-5 h-5 border-2 border-[#1db954] border-t-transparent rounded-full"
+      class="animate-spin w-5 h-5 border-2 border-[#ff2d55] border-t-transparent rounded-full"
     ></div>
 
     <!-- Icono descarga -->
@@ -111,7 +111,7 @@ const handleDownloadClick = async () => {
 }
 
 .download-button.is-downloaded {
-  color: #1db954;
+  color: #ff2d55;
 }
 
 .download-button.is-downloading {

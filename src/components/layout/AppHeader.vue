@@ -93,16 +93,24 @@ onMounted(loadLastSearch)
 
 <template>
   <header class="app-header">
-    <div class="header-left">
-      <button
-        @click="toggleSidebar"
-        class="hamburger-btn"
-        aria-label="Toggle menu"
-      >
-        <Menu :size="24" />
-      </button>
+    <div class="header-top">
+      <div class="header-left">
+        <button
+          @click="toggleSidebar"
+          class="hamburger-btn"
+          aria-label="Toggle menu"
+        >
+          <Menu :size="24" />
+        </button>
 
-      <router-link to="/" class="logo">LiveMusic</router-link>
+        <router-link to="/" class="logo">LiveMusic</router-link>
+      </div>
+
+      <div class="header-right">
+        <router-link to="/library" class="library-link">
+          Tu biblioteca
+        </router-link>
+      </div>
     </div>
 
     <div class="header-center">
@@ -129,29 +137,31 @@ onMounted(loadLastSearch)
         </button>
       </div>
     </div>
-
-    <div class="header-right">
-      <router-link to="/library" class="library-link">
-        Tu biblioteca
-      </router-link>
-    </div>
   </header>
 </template>
 
 <style scoped>
 .app-header {
-  height: 64px;
-  background: #000;
-  backdrop-filter: blur(10px);
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 1rem;
-  padding: 0 1rem;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0.75rem 1rem;
   position: sticky;
   top: 0;
   z-index: 100;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  height: auto;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  height: 44px;
+  width: 100%;
 }
 
 .header-left {
@@ -214,12 +224,13 @@ onMounted(loadLastSearch)
 }
 
 .search-wrapper:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .search-wrapper.is-focused {
   background: rgba(255, 255, 255, 0.15);
-  border-color: #1db954;
+  border-color: #ff2d55;
+  box-shadow: 0 0 0 4px rgba(255, 45, 85, 0.1);
 }
 
 .search-icon {
@@ -231,7 +242,7 @@ onMounted(loadLastSearch)
 }
 
 .search-wrapper.is-focused .search-icon {
-  color: #1db954;
+  color: #ff2d55;
 }
 
 .search-input {
@@ -295,114 +306,44 @@ onMounted(loadLastSearch)
 
 .library-link.router-link-active {
   opacity: 1;
-  color: #1db954;
+  color: #ff2d55;
   font-weight: 600;
 }
 
-@media (max-width: 374px) {
+@media (max-width: 767px) {
   .app-header {
-    height: 56px;
-    padding: 0 0.75rem;
-    gap: 0.5rem;
-    grid-template-columns: auto 1fr;
-  }
-
-  .header-left {
-    gap: 0.5rem;
-  }
-
-  .logo {
-    font-size: 1.1rem;
-  }
-
-  .header-center {
-    grid-column: span 2;
-    padding-top: 0.5rem;
-  }
-
-  .header-right {
-    display: none;
-  }
-
-  .search-wrapper {
-    max-width: 100%;
-  }
-
-  .search-input {
-    font-size: 16px;
-    padding: 8px 36px 8px 38px;
-  }
-}
-
-@media (min-width: 375px) and (max-width: 479px) {
-  .app-header {
-    height: 60px;
+    padding: 0.5rem 1rem 0.75rem;
     gap: 0.75rem;
-    grid-template-columns: minmax(120px, auto) 1fr;
-  }
-
-  .header-left {
-    gap: 0.5rem;
-  }
-
-  .logo {
-    font-size: 1.15rem;
   }
 
   .header-center {
-    justify-content: flex-end;
-  }
-
-  .header-right {
-    display: none;
+    width: 100%;
+    margin-top: 0.25rem;
   }
 
   .search-wrapper {
     max-width: 100%;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.08);
   }
 
-  .search-input {
-    font-size: 0.875rem;
-  }
-}
-
-@media (min-width: 480px) and (max-width: 639px) {
-  .app-header {
-    grid-template-columns: minmax(140px, auto) 1fr auto;
-  }
-
-  .logo {
-    font-size: 1.2rem;
-  }
-
-  .search-wrapper {
-    max-width: 280px;
-  }
-
-  .library-link {
-    font-size: 0.85rem;
-  }
-}
-
-@media (min-width: 640px) and (max-width: 767px) {
-  .app-header {
-    grid-template-columns: 180px 1fr 140px;
-  }
-
-  .search-wrapper {
-    max-width: 320px;
+  .header-right {
+    display: none;
   }
 }
 
 @media (min-width: 768px) {
-  .hamburger-btn {
-    display: none;
+  .app-header {
+    height: 72px;
+    flex-direction: row;
+    justify-content: space-between;
+    padding: 0 2rem;
   }
 
-  .app-header {
-    height: 70px;
-    grid-template-columns: 200px 1fr 150px;
-    padding: 0 1.5rem;
+  .header-top {
+    width: auto;
+    height: 100%;
+    gap: 1.5rem;
   }
 
   .logo {

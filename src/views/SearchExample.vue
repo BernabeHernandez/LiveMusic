@@ -118,7 +118,7 @@ const addToQueue = (track) => {
 }
 
 .play-btn:hover {
-  background: #1db954;
-  border-color: #1db954;
+  background: #ff2d55;
+  border-color: #ff2d55;
 }
 </style>
