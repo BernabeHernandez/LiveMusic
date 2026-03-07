@@ -16,12 +16,12 @@
       <form @submit.prevent="handleLogin" class="login-form">
         <div class="input-group">
           <div class="input-wrapper">
-            <Mail class="input-icon" :size="18" />
+            <User class="input-icon" :size="18" />
             <input 
-              type="email" 
-              id="email" 
-              v-model="email" 
-              placeholder="Correo electrónico" 
+              type="text" 
+              id="identifier" 
+              v-model="identifier" 
+              placeholder="Correo o Usuario" 
               required 
               :disabled="isLoading"
             />
@@ -64,12 +64,12 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuthStore } from '@/stores/auth';
-import { Mail, Lock, AlertCircle } from 'lucide-vue-next';
+import { User, Lock, AlertCircle } from 'lucide-vue-next';
 
 const router = useRouter();
 const authStore = useAuthStore();
 
-const email = ref('');
+const identifier = ref('');
 const password = ref('');
 const error = ref('');
 const isLoading = ref(false);
@@ -79,7 +79,7 @@ const handleLogin = async () => {
   isLoading.value = true;
 
   try {
-    const result = await authStore.login(email.value, password.value);
+    const result = await authStore.login(identifier.value, password.value);
     
     if (result.success) {
       router.push('/');

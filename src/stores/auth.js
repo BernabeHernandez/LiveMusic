@@ -9,10 +9,10 @@ export const useAuthStore = defineStore('auth', () => {
     const user = ref(JSON.parse(localStorage.getItem('user')) || null);
     const router = useRouter();
 
-    async function login(email, password) {
+    async function login(identifier, password) {
         try {
             const response = await axios.post(`${API_URL}/api/auth/login`, {
-                email,
+                identifier,
                 password
             });
 
