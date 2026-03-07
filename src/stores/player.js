@@ -3,7 +3,7 @@ import { dbService } from '../services/db.js';
 import { useAuthStore } from './auth';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
-const FAVORITES_STORAGE_KEY = 'music_player_favorites'
+const getFavoritesKey = (userId) => userId ? `music_favorites_${userId}` : 'music_player_favorites_anon'
 
 export const usePlayerStore = defineStore('player', {
   state: () => ({
@@ -45,27 +45,56 @@ export const usePlayerStore = defineStore('player', {
       this.loadFavorites();
     },
 
+    saveFavorites() {
+      const authStore = useAuthStore();
+      const userId = authStore.user?._id;
+      const key = getFavoritesKey(userId);
+      localStorage.setItem(key, JSON.stringify(this.favorites));
+    },
+
     async loadFavorites() {
       const authStore = useAuthStore();
       if (authStore.isAuthenticated()) {
+        const userId = authStore.user._id;
         try {
-          const response = await fetch(`${API_URL}/api/favorites?userId=${authStore.user._id}`);
+          const response = await fetch(`${API_URL}/api/favorites?userId=${userId}`);
           if (response.ok) {
-            this.favorites = await response.json();
-            console.log(`✅ Favoritos sincronizados desde la nube: ${this.favorites.length}`);
+            const data = await response.json();
+
+            // VALIDACIÓN CRÍTICA: Asegurarse de que el usuario no haya cambiado durante la petición
+            if (!authStore.isAuthenticated() || authStore.user._id !== userId) {
+              console.log('⚠️ Ignorando carga de favoritos: el usuario cambió durante la espera.');
+              return;
+            }
+
+            this.favorites = data;
+            console.log(`✅ Favoritos sincronizados desde la nube (${userId}): ${this.favorites.length}`);
+            this.saveFavorites(); // Guardar en el storage específico del usuario
             return;
           }
         } catch (error) {
           console.error('Error sincronizando favoritos:', error);
         }
-      }
 
-      // Fallback a localStorage si offline o error
-      try {
-        const stored = localStorage.getItem(FAVORITES_STORAGE_KEY);
+        // Cargar desde el storage específico del usuario si falla la nube
+        const key = getFavoritesKey(userId);
+        const stored = localStorage.getItem(key);
         if (stored) {
           this.favorites = JSON.parse(stored);
-          console.log(`✅ Cargados ${this.favorites.length} favoritos locales`);
+          console.log(`✅ Cargados ${this.favorites.length} favoritos locales para usuario ${userId}`);
+          return;
+        }
+      }
+
+      // Fallback a anónimo si no hay usuario
+      try {
+        const key = getFavoritesKey(null);
+        const stored = localStorage.getItem(key);
+        if (stored) {
+          this.favorites = JSON.parse(stored);
+          console.log(`✅ Cargados ${this.favorites.length} favoritos locales anónimos`);
+        } else {
+          this.favorites = [];
         }
       } catch (error) {
         console.error('Error cargando favoritos locales:', error);
@@ -126,27 +155,42 @@ export const usePlayerStore = defineStore('player', {
 
     async syncLocalFavorites() {
       const authStore = useAuthStore();
-      if (!authStore.isAuthenticated() || this.favorites.length === 0) return;
+      if (!authStore.isAuthenticated()) return;
 
-      console.log('🔄 Sincronizando favoritos locales con la nube...');
-      for (const fav of this.favorites) {
-        try {
-          await fetch(`${API_URL}/api/favorites`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ ...fav, userId: authStore.user._id })
-          });
-        } catch (e) {
-          console.warn('Error sincronizando favorito:', fav.title);
+      const userId = authStore.user._id;
+      // Primero intentamos sincronizar lo que sea que esté en la lista actual 
+      // (que podría venir de una sesión anónima previa si no se limpió)
+      if (this.favorites.length > 0) {
+        console.log('🔄 Sincronizando favoritos actuales con la nube...');
+        for (const fav of this.favorites) {
+          try {
+            await fetch(`${API_URL}/api/favorites`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ ...fav, userId })
+            });
+          } catch (e) {
+            console.warn('Error sincronizando favorito:', fav.title);
+          }
         }
       }
-      this.loadFavorites(); // Recargar desde nube para limpiar si hubo cambios
+      this.loadFavorites(); // Forzar recarga desde nube para este usuario
     },
 
-    clearFavorites() {
+    async clearFavorites() {
+      const authStore = useAuthStore();
+      if (authStore.isAuthenticated()) {
+        const userId = authStore.user._id;
+        try {
+          console.log(`🗑️ Limpiando favoritos en la nube para usuario ${userId}...`);
+          await fetch(`${API_URL}/api/favorites/${userId}`, { method: 'DELETE' });
+        } catch (e) {
+          console.error('Error al limpiar favoritos en nube:', e);
+        }
+      }
       this.favorites = [];
       this.saveFavorites();
-      console.log('🗑️ Favoritos limpiados');
+      console.log('🗑️ Favoritos locales y de nube limpiados');
     },
 
     playFavorites(startIndex = 0) {
@@ -581,6 +625,25 @@ export const usePlayerStore = defineStore('player', {
         URL.revokeObjectURL(this.activeLocalObjectUrl);
         this.activeLocalObjectUrl = null;
       }
+      if (this.currentAbortController) {
+        this.currentAbortController.abort();
+        this.currentAbortController = null;
+      }
+    },
+
+    reset() {
+      this.cleanup();
+      this.currentTrack = null;
+      this.isPlaying = false;
+      this.queue = [];
+      this.currentIndex = 0;
+      this.currentTime = 0;
+      this.duration = 0;
+      this.progress = 0;
+      this.favorites = [];
+      this.prefetchedData.clear();
+      this.pendingPrefetches.clear();
+      console.log('🧹 Estado del reproductor reiniciado');
     },
 
     upgradeThumbnail(url) {

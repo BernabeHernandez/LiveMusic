@@ -20,8 +20,9 @@ export const useAuthStore = defineStore('auth', () => {
                 user.value = response.data.user;
                 localStorage.setItem('user', JSON.stringify(user.value));
 
-                // Sincronizar favoritos locales a la nube al iniciar sesión
+                // Reiniciar y sincronizar favoritos al iniciar sesión
                 const playerStore = (await import('./player')).usePlayerStore();
+                playerStore.reset();
                 playerStore.syncLocalFavorites();
 
                 return { success: true };
@@ -36,10 +37,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     function logout() {
-        // Detener música al cerrar sesión
+        // Detener música y limpiar estado al cerrar sesión
         import('./player').then(m => {
             const playerStore = m.usePlayerStore();
-            playerStore.cleanup();
+            playerStore.reset();
         }).catch(() => { });
 
         user.value = null;
