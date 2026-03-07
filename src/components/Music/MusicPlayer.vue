@@ -160,6 +160,7 @@ const formatTime = (seconds) => {
           @touchstart="handleSeekStart"
           @input="handleSeek"
           @change="handleSeekEnd"
+          :style="`--progress: ${playerStore.progress}%`"
           class="progress-slider"
         />
         <span class="time-label">{{ formatTime(playerStore.duration) }}</span>
@@ -304,11 +305,11 @@ const formatTime = (seconds) => {
 }
 
 .favorite-button-mini.is-favorite {
-  color: #ff4d4d; /* Rojo para favoritos, estilo Apple Music/vibrante */
+  color: #ff2d55;
 }
 
 .favorite-button-mini.is-favorite:hover {
-  color: #ff2a2a;
+  color: #ff375f;
 }
 
 .player-controls {
@@ -336,12 +337,19 @@ const formatTime = (seconds) => {
 }
 
 .progress-slider {
+  -webkit-appearance: none;
   flex: 1;
-  height: 4px;
-  border-radius: 2px;
-  background: #404040;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  background-image: linear-gradient(to right, #ff2d55 var(--progress, 0%), transparent var(--progress, 0%));
   outline: none;
   cursor: pointer;
+  transition: height 0.2s ease;
+}
+
+.progress-slider:hover {
+  height: 8px;
 }
 
 .progress-slider::-webkit-slider-thumb {
@@ -351,16 +359,14 @@ const formatTime = (seconds) => {
   border-radius: 50%;
   background: white;
   cursor: pointer;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-  opacity: 0; /* Oculto por defecto */
-  transition: opacity 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
+  opacity: 0;
+  transition: all 0.2s ease;
 }
 
-.progress-container:hover .progress-slider::-webkit-slider-thumb {
-  opacity: 1; /* Solo aparece al pasar el mouse */
-}
-
-.progress-slider::-webkit-slider-thumb:hover {
+.progress-container:hover .progress-slider::-webkit-slider-thumb,
+.progress-slider:active::-webkit-slider-thumb {
+  opacity: 1;
   transform: scale(1.2);
 }
 
@@ -371,12 +377,15 @@ const formatTime = (seconds) => {
   background: white;
   cursor: pointer;
   border: none;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.5);
   opacity: 0;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
 }
 
-.progress-container:hover .progress-slider::-moz-range-thumb {
+.progress-container:hover .progress-slider::-moz-range-thumb,
+.progress-slider:active::-moz-range-thumb {
   opacity: 1;
+  transform: scale(1.2);
 }
 
 .controls {
@@ -414,27 +423,27 @@ const formatTime = (seconds) => {
 
 .shuffle-button.active,
 .repeat-button.active {
-  color: #ff4d4d; /* Rojo para estados activos, estilo iOS */
-  background: rgba(255, 255, 255, 0.08);
+  color: #ff2d55;
+  background: rgba(255, 45, 85, 0.1);
 }
 
 .play-button {
-  background: white;
-  border: none;
-  width: 44px;
-  height: 44px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
+  background: white;
+  color: #000;
+  border: none;
   cursor: pointer;
-  color: black;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  box-shadow: 
+    0 8px 30px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
 .play-button:hover {
-  transform: scale(1.1);
   background: #f0f0f0;
 }
 

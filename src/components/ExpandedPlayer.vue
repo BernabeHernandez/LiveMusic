@@ -513,33 +513,57 @@ const handleTouchEnd = () => {
 }
 
 .progress-slider {
+  -webkit-appearance: none;
   width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background: linear-gradient(to right, #ff2d55 var(--progress, 0%), rgba(255, 255, 255, 0.15) var(--progress, 0%));
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.1);
+  background-image: linear-gradient(to right, #ff2d55 var(--progress, 0%), transparent var(--progress, 0%));
   outline: none;
   cursor: pointer;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
+  transition: height 0.2s ease;
+}
+
+.progress-slider:hover {
+  height: 8px;
 }
 
 .progress-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: white;
   cursor: pointer;
-  border: 3px solid #ff2d55;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.progress-container:hover .progress-slider::-webkit-slider-thumb,
+.progress-slider:active::-webkit-slider-thumb {
+  opacity: 1;
+  transform: scale(1.2);
 }
 
 .progress-slider::-moz-range-thumb {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background: white;
   cursor: pointer;
-  border: 3px solid #ff2d55;
   border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  opacity: 0;
+  transition: all 0.2s ease;
+}
+
+.progress-container:hover .progress-slider::-moz-range-thumb,
+.progress-slider:active::-moz-range-thumb {
+  opacity: 1;
+  transform: scale(1.2);
 }
 
 .time-display {
@@ -579,7 +603,7 @@ const handleTouchEnd = () => {
 
 .control-btn.active {
   color: #ff2d55;
-  background: rgba(29, 185, 84, 0.15);
+  background: rgba(255, 45, 85, 0.15);
 }
 
 .control-btn:disabled {
