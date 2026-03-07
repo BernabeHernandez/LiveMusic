@@ -112,8 +112,8 @@ const closeSidebar = () => {
   margin-top: auto;
   padding: 1rem 0.5rem;
   border-top: 1px solid rgba(255, 255, 255, 0.08);
-  /* Fix: Espacio extra para que no lo tape el reproductor */
-  padding-bottom: 120px; 
+  /* Asegura un espacio mínimo al fondo en todas las plataformas */
+  padding-bottom: 24px; 
 }
 
 .logout-btn {
@@ -212,6 +212,7 @@ const closeSidebar = () => {
     bottom: 0;
     width: 300px;
     max-width: 85vw;
+    height: 100dvh;
     z-index: 2001;
     transform: translateX(-100%);
     box-shadow: 20px 0 40px rgba(0, 0, 0, 0.5);
@@ -220,15 +221,19 @@ const closeSidebar = () => {
   .sidebar.sidebar-open {
     transform: translateX(0);
   }
+
+  .sidebar-footer {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom));
+  }
 }
 
 @media (min-width: 768px) {
   .sidebar {
     position: relative;
     transform: none !important;
-    width: 260px;     
-    min-width: 260px;  
-    height: 100vh;
+    width: 240px;     
+    min-width: 240px;  
+    height: 100%;
     border-right: 1px solid rgba(255,255,255,0.08);
   }
 

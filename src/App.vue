@@ -123,7 +123,6 @@ onMounted(() => {
 @media (min-width: 768px) {
   .sidebar {
     display: block;
-    width: 200px;
   }
 
   .content-area {
@@ -132,13 +131,13 @@ onMounted(() => {
   }
 
   .music-player {
-    left: 200px;
+    left: 240px;
   }
 }
 
 @media (min-width: 1024px) {
   .sidebar {
-    width: 240px;
+    display: block;
   }
 
   .content-area {
