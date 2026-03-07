@@ -211,7 +211,6 @@ onMounted(() => {
             <Music2 :size="40" />
           </div>
           <p class="item-title">{{ playlist.title }}</p>
-          <p class="item-subtitle">Apple Music</p>
         </div>
       </div>
     </section>
@@ -301,6 +300,7 @@ onMounted(() => {
   overflow-x: auto;
   padding: 10px 0;
   scrollbar-width: none;
+  align-items: flex-start;
 }
 
 .hero-carousel::-webkit-scrollbar { display: none; }
@@ -308,7 +308,7 @@ onMounted(() => {
 .featured-card {
   flex-shrink: 0;
   border-radius: 20px;
-  padding: 30px;
+  padding: 16px 24px;
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -322,9 +322,10 @@ onMounted(() => {
 
 .featured-card.main {
   width: 100%;
-  aspect-ratio: 21/9;
+  aspect-ratio: 24/5;
   background: linear-gradient(135deg, rgba(255, 45, 85, 0.2) 0%, rgba(255, 45, 85, 0.8) 100%);
   box-shadow: 0 10px 40px rgba(255, 45, 85, 0.2);
+  align-self: flex-start;
 }
 
 .featured-card.secondary {
@@ -343,7 +344,7 @@ onMounted(() => {
 }
 
 .featured-title {
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-weight: 800;
   margin: 0;
   letter-spacing: -0.04em;
@@ -356,9 +357,9 @@ onMounted(() => {
 }
 
 .featured-subtitle {
-  font-size: 1.1rem;
+  font-size: 1rem;
   color: rgba(255, 255, 255, 0.9);
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .featured-play-btn {
@@ -571,9 +572,13 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
-  .featured-card.main { aspect-ratio: 16/10; }
-  .featured-title { font-size: 2rem; }
+  .featured-card.main { aspect-ratio: 16/5; padding: 12px 16px; }
+  .featured-card.secondary { display: none; }
+  .featured-title { font-size: 1.25rem; margin-bottom: 8px; }
+  .featured-subtitle { display: none; }
+  .featured-play-btn { padding: 4px 12px; font-size: 0.75rem; }
   .home-view { padding: 1rem 1rem 120px; }
+  .hero-carousel { margin-bottom: 12px; }
 }
 
 /* Trending List */
