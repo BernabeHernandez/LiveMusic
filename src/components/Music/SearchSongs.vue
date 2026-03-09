@@ -50,12 +50,13 @@ const isFavorite = (videoId) => {
 }
 
 const saveSearchState = () => {
-  if (!query.value || results.value.length === 0) return
+  if (!query.value || (results.value.length === 0 && albums.value.length === 0)) return
   
   try {
     const state = {
       query: query.value,
       results: results.value,
+      albums: albums.value,
       totalAvailable: totalAvailable.value,
       hasMore: hasMore.value,
       currentOffset: currentOffset.value,
@@ -69,13 +70,26 @@ const saveSearchState = () => {
   }
 }
 
-const loadSearchState = () => {
+const loadSearchState = (targetQuery = null) => {
   try {
     const saved = localStorage.getItem(STORAGE_KEY)
     if (!saved) return false
     
     const state = JSON.parse(saved)
+    if (!state || !state.query) return false
     
+    // Validación de query objetivo
+    if (targetQuery && state.query.toLowerCase() !== targetQuery.toLowerCase()) {
+      return false
+    }
+
+    // Solo restaurar si realmente hay contenido útil (canciones o álbumes)
+    const hasData = (state.results && state.results.length > 0) || (state.albums && state.albums.length > 0)
+    if (!hasData) {
+      console.log('[Search] Estado guardado vacío o inválido, ignorando');
+      return false
+    }
+
     const isRecent = Date.now() - state.timestamp < 24 * 60 * 60 * 1000
     if (!isRecent) {
       localStorage.removeItem(STORAGE_KEY)
@@ -83,16 +97,17 @@ const loadSearchState = () => {
     }
     
     query.value = state.query
-    results.value = state.results
-    totalAvailable.value = state.totalAvailable
-    hasMore.value = state.hasMore
-    currentOffset.value = state.currentOffset
-    isExpanded.value = state.isExpanded
+    results.value = Array.isArray(state.results) ? state.results : []
+    albums.value = Array.isArray(state.albums) ? state.albums : []
+    totalAvailable.value = state.totalAvailable || 0
+    hasMore.value = state.hasMore !== undefined ? state.hasMore : true
+    currentOffset.value = state.currentOffset || 0
+    isExpanded.value = state.isExpanded || false
     
-    console.log('Estado restaurado:', state.query)
+    console.log('[Search] Restauración completa:', state.query, `(${results.value.length} temas, ${albums.value.length} álbumes)`)
     return true
   } catch (error) {
-    console.error('Error cargando búsqueda:', error)
+    console.error('[Search] Error en loadSearchState:', error)
     return false
   }
 }
@@ -340,13 +355,32 @@ const manualLoadMore = () => {
 watch(
   () => route.query.q,
   (newQuery) => {
+    console.log('[Search] Watch detectado, query:', newQuery);
+    
     if (newQuery) {
-      query.value = newQuery
-      search(false)
-    } else if (!newQuery && route.path === '/search') {
-      const restored = loadSearchState()
-      if (restored) {
-        router.replace({ path: '/search', query: { q: query.value } })
+      const q = String(newQuery).trim();
+      
+      // 1. Si los resultados actuales ya son correctos en memoria, no hacer nada
+      if (q.toLowerCase() === query.value.toLowerCase() && (results.value.length > 0 || albums.value.length > 0)) {
+        console.log('[Search] Resultados ya cargados en memoria');
+        return;
+      }
+
+      // 2. Intentar restaurar de localStorage (ej. cuando volvemos de Favoritos)
+      if (loadSearchState(q)) {
+        return;
+      }
+
+      // 3. Ejecutar búsqueda real si no hay nada guardado
+      console.log('[Search] Ejecutando búsqueda fresca para:', q);
+      query.value = q;
+      search(false);
+    } else if (route.path === '/search') {
+      // Si entramos a /search sin query, intentar restaurar la última búsqueda si existe
+      console.log('[Search] Sin query en URL, intentando restaurar cualquier estado reciente');
+      const restored = loadSearchState();
+      if (restored && query.value) {
+        router.replace({ path: '/search', query: { q: query.value } });
       }
     }
   },
@@ -354,14 +388,8 @@ watch(
 )
 
 onMounted(() => {
-  console.log('Componente montado - Listeners activos')
-  window.addEventListener('scroll', handleScroll, { passive: true })
-  if (!route.query.q && route.path === '/search') {
-    const restored = loadSearchState()
-    if (restored) {
-      router.replace({ path: '/search', query: { q: query.value } })
-    }
-  }
+  console.log('[Search] Montado');
+  window.addEventListener('scroll', handleScroll, { passive: true });
 })
 
 onUnmounted(() => {
@@ -420,13 +448,28 @@ onUnmounted(() => {
       </div>
     </div>
 
-    <div v-if="isLoading && !results.length" class="loading">
-      <Loader :size="40" class="spinner" />
-      <p>Buscando...</p>
+    <div v-if="!query && !isLoading" class="search-welcome">
+      <div class="welcome-content">
+        <Search :size="64" class="welcome-icon" />
+        <h3>Encuentra tu música favorita</h3>
+        <p>Busca canciones, artistas o álbumes arriba</p>
+      </div>
     </div>
 
-    <div v-if="errorMessage" class="error-message">
+    <div v-if="isLoading" class="loading-overlay">
+      <Loader :size="40" class="spinner" />
+      <p>Buscando resultados...</p>
+    </div>
+
+    <div v-else-if="errorMessage" class="error-message">
       <p>{{ errorMessage }}</p>
+      <button @click="search(false)" class="retry-btn">Reintentar</button>
+    </div>
+
+    <div v-else-if="query && !results.length && !albums.length && !isLoading" class="no-results-found">
+      <Music :size="48" class="no-results-icon" />
+      <p>No encontramos resultados para "{{ query }}"</p>
+      <span>Prueba con otros términos de búsqueda</span>
     </div>
 
     <div class="results-grid" v-if="results.length">
@@ -743,6 +786,59 @@ onUnmounted(() => {
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
+}
+
+/* Feedback States */
+.search-welcome, .no-results-found, .loading-overlay {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  text-align: center;
+  gap: 1.5rem;
+  padding: 2rem;
+  color: #b3b3b3;
+  animation: fadeIn 0.4s ease-out;
+}
+
+.welcome-icon, .no-results-icon {
+  color: rgba(255, 45, 85, 0.4);
+}
+
+.welcome-content h3, .no-results-found p {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: white;
+  letter-spacing: -0.01em;
+}
+
+.welcome-content p, .no-results-found span {
+  margin-top: 0.5rem;
+  font-size: 0.95rem;
+  opacity: 0.7;
+}
+
+.retry-btn {
+  margin-top: 1rem;
+  background: #ff2d55;
+  color: white;
+  border: none;
+  padding: 0.75rem 2rem;
+  border-radius: 25px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.retry-btn:hover {
+  transform: scale(1.05);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .loading, .loading-more {

@@ -11,7 +11,7 @@ const emit = defineEmits(['toggle-sidebar'])
 const searchQuery = ref('')
 const isFocused = ref(false)
 
-const STORAGE_KEY = 'music_search_state'
+const STORAGE_KEY = 'music_last_query'
 
 const loadLastSearch = () => {
   try {
