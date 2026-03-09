@@ -2,7 +2,8 @@
 import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { usePlayerStore } from '../../stores/player'
-import { Search, Music, Play, Pause, Loader, Heart } from 'lucide-vue-next'
+import { Search, Music, Play, Pause, Loader, Heart, Disc } from 'lucide-vue-next'
+import AlbumView from './AlbumView.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -12,6 +13,9 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
 const query = ref('')
 const results = ref([])
+const albums = ref([])
+const selectedAlbum = ref(null)
+const isAlbumViewOpen = ref(false)
 const isLoading = ref(false)
 const errorMessage = ref('')
 const currentOffset = ref(0)
@@ -93,6 +97,11 @@ const loadSearchState = () => {
   }
 }
 
+const cleanUploader = (name) => {
+  if (!name) return 'Artista desconocido'
+  return name.replace(/\s*-\s*Topic$/i, '').replace(/YouTube/i, 'Oficial')
+}
+
 const preloadAudioUrls = async (items) => {
   playerStore.prefetchTracks(items.map(item => ({
     videoId: item.videoId || item.url?.split('v=')[1]?.split('&')[0] || item.url?.split('/').pop(),
@@ -110,6 +119,7 @@ const search = async (loadMore = false) => {
     console.log('Nueva búsqueda');
     isLoading.value = true
     results.value = []
+    albums.value = []
     currentOffset.value = 0
     hasMore.value = true
     totalAvailable.value = 0
@@ -175,6 +185,7 @@ const search = async (loadMore = false) => {
       results.value = [...results.value, ...items]
     } else {
       results.value = items
+      albums.value = data.albums || []
       if (items.length > 0) {
         preloadAudioUrls(items);
       }
@@ -283,6 +294,19 @@ const formatDuration = (seconds) => {
   return `${mins}:${secs.toString().padStart(2, '0')}`
 }
 
+const openAlbum = (album) => {
+  selectedAlbum.value = album
+  isAlbumViewOpen.value = true
+}
+
+const closeAlbum = () => {
+  isAlbumViewOpen.value = false
+  // Don't null selectedAlbum immediately to avoid transition glitches
+  setTimeout(() => {
+    if (!isAlbumViewOpen.value) selectedAlbum.value = null
+  }, 400)
+}
+
 const handleScroll = () => {
   if (scrollTimeout) clearTimeout(scrollTimeout)
 
@@ -356,10 +380,43 @@ onUnmounted(() => {
     <div class="search-header" v-if="query">
       <Search :size="24" class="search-icon" />
       <h2>Resultados para "{{ query }}"</h2>
-      <div class="search-stats" v-if="results.length">
-        <span class="stats-text">{{ results.length }} de {{ totalAvailable || '?' }} canciones</span>
+      <div class="search-stats" v-if="results.length || albums.length">
+        <span class="stats-text" v-if="results.length">{{ results.length }} de {{ totalAvailable || '?' }} canciones</span>
         <span v-if="isExpanded" class="stats-badge">Expansión completa</span>
         <span v-else-if="expansionInProgress" class="stats-badge expanding">Buscando más...</span>
+      </div>
+    </div>
+
+    <!-- Albums Section -->
+    <div v-if="albums.length && !isLoading" class="albums-section">
+      <div class="section-header">
+        <Disc :size="20" class="section-icon" />
+        <h3>Álbumes</h3>
+      </div>
+      <div class="albums-scroll">
+        <div 
+          v-for="album in albums" 
+          :key="album.id" 
+          class="album-card"
+          @click="openAlbum(album)"
+        >
+          <div class="album-artwork-wrapper">
+            <img :src="album.thumbnail" :alt="album.title" class="album-artwork" loading="lazy" />
+            <div class="album-overlay">
+              <Play :size="24" fill="currentColor" />
+            </div>
+            <!-- Badge oficial flotante -->
+            <div v-if="album.isOfficial" class="official-badge-floating" title="Canal Oficial">
+              <Disc :size="14" fill="currentColor" />
+            </div>
+          </div>
+          <div class="album-info-short">
+            <div class="title-with-badge">
+              <p class="album-title">{{ album.title }}</p>
+            </div>
+            <p class="album-artist">{{ cleanUploader(album.uploader) }}</p>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -462,6 +519,14 @@ onUnmounted(() => {
         {{ results.length }} canciones disponibles
       </p>
     </div>
+
+    <!-- Album Detail View Overlay -->
+    <AlbumView 
+      v-if="selectedAlbum" 
+      :album="selectedAlbum" 
+      :is-open="isAlbumViewOpen"
+      @close="closeAlbum"
+    />
   </div>
 </template>
 
@@ -480,8 +545,155 @@ onUnmounted(() => {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  margin-bottom: 1.25rem;
+  margin-bottom: 1rem;
   padding: 0.25rem 0;
+}
+
+/* Albums Section Styles */
+.albums-section {
+  margin-bottom: 2rem;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.section-icon {
+  color: #ff2d55;
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  letter-spacing: -0.02em;
+}
+
+.albums-scroll {
+  display: flex;
+  gap: 1.25rem;
+  overflow-x: auto;
+  padding: 0.5rem 0.5rem 1.5rem;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  position: relative;
+}
+
+/* Sombreado a la derecha para indicar scroll */
+.albums-section::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 40px;
+  background: linear-gradient(to right, transparent, #121212);
+  pointer-events: none;
+  z-index: 5;
+  opacity: 0.8;
+}
+
+.albums-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.album-card {
+  flex: 0 0 160px;
+  scroll-snap-align: start;
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.album-card:active {
+  transform: scale(0.95);
+}
+
+.album-artwork-wrapper {
+  position: relative;
+  width: 160px;
+  height: 160px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+  background: #282828;
+  margin-bottom: 0.75rem;
+}
+
+.official-badge-floating {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 45, 85, 0.9);
+  color: white;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+}
+
+.album-artwork {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.album-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  color: white;
+  backdrop-filter: blur(4px);
+}
+
+.album-card:hover .album-artwork {
+  transform: scale(1.05);
+}
+
+.album-card:hover .album-overlay {
+  opacity: 1;
+}
+
+.album-info-short {
+  min-width: 0;
+  padding: 0 4px;
+}
+
+.title-with-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.album-title {
+  margin: 0;
+  font-size: 0.9rem;
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #fff;
+}
+
+.album-artist {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #b3b3b3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .search-icon {

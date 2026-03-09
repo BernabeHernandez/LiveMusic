@@ -129,7 +129,7 @@ const formatTime = (seconds) => {
   />
 
   <div 
-    v-if="playerStore.currentTrack" 
+    v-if="playerStore.currentTrack && !isExpanded" 
     class="player-bar"
     :style="{ '--bar-bg-color': backgroundColor }"
   >
@@ -224,31 +224,29 @@ const formatTime = (seconds) => {
   bottom: 0;
   left: 0;
   width: 100%;
+  height: 75px; /* Altura slim del diseño original */
   background: var(--bar-bg-color, #111);
   color: white;
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px 24px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08); /* Fino y elegante, no verde */
+  padding: 0 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5);
-  z-index: 1000;
+  z-index: 3000;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  transition: background-color 0.8s ease;
 }
 
 .track-info {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 12px;
   flex: 1;
   min-width: 0;
-  max-width: 300px;
+  max-width: 250px;
   cursor: pointer;
-  padding: 8px;
-  margin: -8px;
-  border-radius: 8px;
+  padding: 4px;
+  border-radius: 6px;
   transition: background 0.2s;
 }
 
@@ -257,9 +255,9 @@ const formatTime = (seconds) => {
 }
 
 .track-thumbnail {
-  width: 55px;
-  height: 55px;
-  border-radius: 8px;
+  width: 48px;
+  height: 48px;
+  border-radius: 6px;
   object-fit: cover;
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
@@ -313,18 +311,22 @@ const formatTime = (seconds) => {
 }
 
 .player-controls {
-  flex: 2;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 8px;
   align-items: center;
-  max-width: 600px;
+  justify-content: center;
+  gap: 0;
+  position: relative;
 }
 
 .progress-container {
+  position: absolute;
+  top: -12px; /* Lo mueve arriba del todo como en el diseño original */
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
-  gap: 10px;
   width: 100%;
 }
 
@@ -339,17 +341,17 @@ const formatTime = (seconds) => {
 .progress-slider {
   -webkit-appearance: none;
   flex: 1;
-  height: 6px;
-  border-radius: 3px;
+  height: 4px;
+  border-radius: 2px;
   background: rgba(255, 255, 255, 0.1);
   background-image: linear-gradient(to right, #ff2d55 var(--progress, 0%), transparent var(--progress, 0%));
   outline: none;
   cursor: pointer;
-  transition: height 0.2s ease;
+  transition: all 0.2s ease;
 }
 
 .progress-slider:hover {
-  height: 8px;
+  height: 6px;
 }
 
 .progress-slider::-webkit-slider-thumb {
@@ -428,8 +430,8 @@ const formatTime = (seconds) => {
 }
 
 .play-button {
-  width: 64px;
-  height: 64px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: white;
   color: #000;
@@ -438,35 +440,92 @@ const formatTime = (seconds) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 
-    0 8px 30px rgba(0, 0, 0, 0.4),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .play-button:hover {
   background: #f0f0f0;
 }
 
-.queue-info {
-  margin-top: 4px;
-}
-
-.queue-text {
-  font-size: 11px;
-  color: #b3b3b3;
-}
-
 @media (max-width: 768px) {
   .player-bar {
+    height: auto;
+    padding: 6px 16px; 
     flex-direction: column;
-    padding: 15px 20px;
-    gap: 15px;
+    gap: 2px;
   }
   
-  .track-info,
-  .player-controls {
+  .track-info {
     max-width: 100%;
     width: 100%;
+    justify-content: space-between;
+    padding: 0;
+    gap: 12px;
+  }
+
+  .track-title {
+    font-size: 16px; /* Aumentado de 14px */
+  }
+
+  .track-artist {
+    font-size: 14px; /* Aumentado de 12px */
+  }
+
+  .track-thumbnail {
+    width: 44px; /* Reducido de 52px a 44px */
+    height: 44px;
+  }
+
+  .player-controls {
+    width: 100%;
+    gap: 8px;
+  }
+
+  .progress-container {
+    position: relative;
+    top: 0;
+    margin: 0;
+    width: 100%;
+    padding: 0;
+    gap: 12px; /* Espacio para etiquetas de tiempo */
+  }
+
+  .time-label {
+    display: block;
+    min-width: 35px;
+    font-size: 13px; /* Aumentado de 11px */
+  }
+
+  .progress-slider {
+    height: 6px; /* Más grueso como en el expandido */
+    border-radius: 3px;
+  }
+
+  .controls {
+    width: auto;
+    justify-content: center;
+    gap: 20px; /* Espaciado "normal" no tan separado ni pegado */
+    padding: 4px 0;
+  }
+
+  .play-button {
+    width: 42px; /* Reducido de 56px a 42px */
+    height: 42px;
+    background: white;
+    color: black;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  .queue-info {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-top: 2px;
+  }
+
+  .shuffle-button, .repeat-button {
+    display: flex;
   }
 }
 </style>

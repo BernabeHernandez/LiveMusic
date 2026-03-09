@@ -97,11 +97,8 @@ onMounted(() => {
   left: 0;
   right: 0;
   width: 100%;
-  height: auto;
-  max-height: 100px;
-  min-height: 70px;
-  flex-shrink: 0;
-  z-index: 50;
+  height: 75px; /* Altura slim coincidente */
+  z-index: 3000;
   background: #181818;
   border-top: 1px solid rgba(255, 255, 255, 0.1);
 }
