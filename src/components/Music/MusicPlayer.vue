@@ -46,8 +46,8 @@ const extractDominantColor = (imageUrl) => {
     g = Math.floor(g / (data.length / 4))
     b = Math.floor(b / (data.length / 4))
     
-    // darken color significantly for the bar
-    const darkenFactor = 0.45
+    // produces a more vibrant color for the bar
+    const darkenFactor = 0.85
     const dr = Math.floor(r * darkenFactor)
     const dg = Math.floor(g * darkenFactor)
     const db = Math.floor(b * darkenFactor)

@@ -33,8 +33,8 @@ const extractDominantColor = (imageUrl) => {
     g = Math.floor(g / (data.length / 4))
     b = Math.floor(b / (data.length / 4))
     
-    // darken color for better contrast
-    const darkenFactor = 0.6
+    // lighten color for a more vibrant effect
+    const darkenFactor = 0.9
     const dr = Math.floor(r * darkenFactor)
     const dg = Math.floor(g * darkenFactor)
     const db = Math.floor(b * darkenFactor)
@@ -306,8 +306,8 @@ const handleTouchEnd = () => {
   bottom: -20px;
   background-size: cover;
   background-position: center;
-  filter: blur(70px) brightness(0.5) saturate(1.3);
-  opacity: 0.5;
+  filter: blur(70px) brightness(0.9) saturate(1.5);
+  opacity: 0.7;
   z-index: 1;
 }
 
@@ -319,9 +319,9 @@ const handleTouchEnd = () => {
   bottom: 0;
   background: linear-gradient(
     to bottom,
-    rgba(0, 0, 0, 0.4) 0%,
-    rgba(0, 0, 0, 0.2) 40%,
-    rgba(0, 0, 0, 0.6) 100%
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.1) 40%,
+    rgba(0, 0, 0, 0.4) 100%
   );
   z-index: 2;
 }
