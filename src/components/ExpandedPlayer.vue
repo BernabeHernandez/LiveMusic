@@ -15,6 +15,14 @@ import DownloadButton from './DownloadButton.vue'
 
 const playerStore = usePlayerStore()
 const backgroundColor = ref('#121212') // Default dark color
+const isSeeking = ref(false)
+const localProgress = ref(0)
+
+watch(() => playerStore.progress, (newVal) => {
+  if (!isSeeking.value) {
+    localProgress.value = newVal || 0
+  }
+})
 
 const props = defineProps({
   isExpanded: {
@@ -103,6 +111,22 @@ const formatTime = (seconds) => {
 
 const handleClose = () => {
   emit('close')
+}
+
+const handleSeekStart = () => {
+  isSeeking.value = true
+}
+
+const handleSeek = (e) => {
+  localProgress.value = parseFloat(e.target.value)
+}
+
+const handleSeekEnd = (e) => {
+  localProgress.value = parseFloat(e.target.value)
+  playerStore.seekTo(localProgress.value)
+  setTimeout(() => {
+    isSeeking.value = false
+  }, 100)
 }
 
 // Swipe to close logic
@@ -221,10 +245,14 @@ const handleTouchEnd = () => {
                 min="0" 
                 max="100" 
                 step="0.1"
-                :value="playerStore.progress || 0"
-                @input="(e) => playerStore.seekTo(parseFloat(e.target.value))"
+                :value="localProgress"
+                @mousedown="handleSeekStart"
+                @touchstart="handleSeekStart"
+                @input="handleSeek"
+                @change="handleSeekEnd"
+                @touchend="handleSeekEnd"
                 class="progress-slider"
-                :style="`--progress: ${playerStore.progress || 0}%`"
+                :style="`--progress: ${localProgress}%`"
               />
               <div class="time-display">
                 <span class="time-current">{{ formatTime(playerStore.currentTime) }}</span>
@@ -548,13 +576,12 @@ const handleTouchEnd = () => {
   cursor: pointer;
   border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  opacity: 0;
+  opacity: 1; /* Siempre visible */
   transition: all 0.2s ease;
 }
 
 .progress-container:hover .progress-slider::-webkit-slider-thumb,
 .progress-slider:active::-webkit-slider-thumb {
-  opacity: 1;
   transform: scale(1.2);
 }
 
@@ -566,13 +593,12 @@ const handleTouchEnd = () => {
   cursor: pointer;
   border: none;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-  opacity: 0;
+  opacity: 1; /* Siempre visible */
   transition: all 0.2s ease;
 }
 
 .progress-container:hover .progress-slider::-moz-range-thumb,
 .progress-slider:active::-moz-range-thumb {
-  opacity: 1;
   transform: scale(1.2);
 }
 

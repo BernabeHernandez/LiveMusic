@@ -15,7 +15,14 @@ import {
 const playerStore = usePlayerStore()    
 const audioElement = ref(null)
 const isSeeking = ref(false)
+const localProgress = ref(0)
 const backgroundColor = ref('#121212')
+
+watch(() => playerStore.progress, (newVal) => {
+  if (!isSeeking.value) {
+    localProgress.value = newVal
+  }
+})
 
 // Function to extract dominant color from image
 const extractDominantColor = (imageUrl) => {
@@ -101,15 +108,15 @@ const handleSeekStart = () => {
 }
 
 const handleSeek = (e) => {
-  if (!isSeeking.value) return
-  const percent = parseFloat(e.target.value)
-  playerStore.seekTo(percent)
+  localProgress.value = parseFloat(e.target.value)
 }
 
 const handleSeekEnd = (e) => {
-  const percent = parseFloat(e.target.value)
-  playerStore.seekTo(percent)
-  isSeeking.value = false
+  localProgress.value = parseFloat(e.target.value)
+  playerStore.seekTo(localProgress.value)
+  setTimeout(() => {
+    isSeeking.value = false
+  }, 100)
 }
 
 const formatTime = (seconds) => {
@@ -121,7 +128,7 @@ const formatTime = (seconds) => {
 </script>
 
 <template>
-  <audio ref="audioElement" preload="metadata"></audio>
+  <audio ref="audioElement" preload="metadata" playsinline webkit-playsinline></audio>
 
   <ExpandedPlayer 
     :isExpanded="playerStore.isExpanded" 
@@ -155,12 +162,13 @@ const formatTime = (seconds) => {
         <input 
           type="range" 
           min="0" max="100" step="0.1"
-          :value="playerStore.progress"
+          :value="localProgress"
           @mousedown="handleSeekStart"
           @touchstart="handleSeekStart"
           @input="handleSeek"
           @change="handleSeekEnd"
-          :style="`--progress: ${playerStore.progress}%`"
+          @touchend="handleSeekEnd"
+          :style="`--progress: ${localProgress}%`"
           class="progress-slider"
         />
         <span class="time-label">{{ formatTime(playerStore.duration) }}</span>
@@ -387,13 +395,12 @@ const formatTime = (seconds) => {
   background: white;
   cursor: pointer;
   box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-  opacity: 0;
+  opacity: 1; /* Siempre visible para pantallas touch */
   transition: all 0.2s ease;
 }
 
 .progress-container:hover .progress-slider::-webkit-slider-thumb,
 .progress-slider:active::-webkit-slider-thumb {
-  opacity: 1;
   transform: scale(1.2);
 }
 
@@ -405,13 +412,12 @@ const formatTime = (seconds) => {
   cursor: pointer;
   border: none;
   box-shadow: 0 2px 8px rgba(0,0,0,0.5);
-  opacity: 0;
+  opacity: 1; /* Siempre visible */
   transition: all 0.2s ease;
 }
 
 .progress-container:hover .progress-slider::-moz-range-thumb,
 .progress-slider:active::-moz-range-thumb {
-  opacity: 1;
   transform: scale(1.2);
 }
 

@@ -351,6 +351,13 @@ export const usePlayerStore = defineStore('player', {
 
       const targetIndex = this.currentIndex;
 
+      // HACK iOS: Mantener viva la sesión de audio llamando a play() sincrónicamente
+      // ANTES de cualquier operación asíncrona (como fetch o IndexedDB)
+      if (this.audio && !this.audio.paused && 'mediaSession' in navigator) {
+         const primPromise = this.audio.play();
+         if (primPromise !== undefined) primPromise.catch(() => {});
+      }
+
       try {
         console.log('🎵 Cargando canción:', videoId);
 
@@ -573,16 +580,22 @@ export const usePlayerStore = defineStore('player', {
           artwork: [{ src: this.currentTrack.thumbnail, sizes: '512x512', type: 'image/jpeg' }]
         });
 
-        navigator.mediaSession.setActionHandler('play', async () => {
+        navigator.mediaSession.setActionHandler('play', () => {
           if (this.audio) {
-            try {
-              await this.audio.play();
+            const playPromise = this.audio.play();
+            if (playPromise !== undefined) {
+              playPromise.then(() => {
+                navigator.mediaSession.playbackState = 'playing';
+              }).catch(err => {
+                console.error('Error al reproducir desde MediaSession:', err);
+                navigator.mediaSession.playbackState = 'paused';
+              });
+            } else {
               navigator.mediaSession.playbackState = 'playing';
-            } catch (err) {
-              console.error('Error al reproducir desde MediaSession:', err);
             }
           }
         });
+        
         navigator.mediaSession.setActionHandler('pause', () => {
           if (this.audio) {
             this.audio.pause();
