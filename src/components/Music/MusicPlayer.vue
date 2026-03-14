@@ -476,8 +476,8 @@ const formatTime = (seconds) => {
 @media (max-width: 768px) {
   .player-bar {
     height: auto;
-    padding: 2px 10px; 
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2px);
+    padding: 4px 12px; 
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
     flex-direction: column;
     gap: 0px;
   }
@@ -487,7 +487,7 @@ const formatTime = (seconds) => {
     width: 100%;
     justify-content: space-between;
     padding: 0;
-    gap: 8px;
+    gap: 12px;
   }
 
   .track-title {
@@ -499,13 +499,13 @@ const formatTime = (seconds) => {
   }
 
   .track-thumbnail {
-    width: 36px; /* Reducido aún más */
-    height: 36px;
+    width: 40px; /* Reducido para hacer barra menos alta */
+    height: 40px;
   }
 
   .player-controls {
     width: 100%;
-    gap: 2px;
+    gap: 4px;
   }
 
   .progress-container {
@@ -531,13 +531,13 @@ const formatTime = (seconds) => {
   .controls {
     width: auto;
     justify-content: center;
-    gap: 20px; 
-    padding: 0px 0; /* Padding en 0 */
+    gap: 24px; /* Un poco mas separados para compensar el tamaño de los iconos */
+    padding: 2px 0; /* Padding minimizado */
   }
 
   .play-button {
-    width: 46px; /* Reducido levemente para que quepa mejor */
-    height: 46px;
+    width: 50px; 
+    height: 50px;
     background: white;
     color: black;
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
