@@ -292,10 +292,7 @@ const handleTouchEnd = () => {
 <style scoped>
 .expanded-player {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background-color: var(--bg-color, #000);
   z-index: 2000;
   overflow: hidden;
@@ -305,6 +302,8 @@ const handleTouchEnd = () => {
   height: 100dvh; 
   height: -webkit-fill-available;
   transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  margin: 0;
+  padding: 0;
 }
 
 .album-background {

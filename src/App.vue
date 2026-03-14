@@ -17,7 +17,7 @@
       </main>
     </div>
 
-    <MusicPlayer v-if="authStore.isAuthenticated()" class="music-player" />
+    <MusicPlayer v-if="authStore.isAuthenticated()" />
   </div>
 </template>
 
@@ -98,17 +98,7 @@ watch(() => playerStore.currentTrack, (track) => {
   padding-bottom: 0;
 }
 
-.music-player {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: 75px; /* Altura slim coincidente */
-  z-index: 3000;
-  background: #181818;
-  border-top: 1px solid rgba(255, 255, 255, 0.1);
-}
+
 
 @media (min-width: 320px) and (max-width: 479px) {
   .content-area {
@@ -134,9 +124,7 @@ watch(() => playerStore.currentTrack, (track) => {
     padding-bottom: 110px;
   }
 
-  .music-player {
-    left: 240px;
-  }
+
 }
 
 @media (min-width: 1024px) {
@@ -149,9 +137,7 @@ watch(() => playerStore.currentTrack, (track) => {
     padding-bottom: 110px;
   }
 
-  .music-player {
-    left: 240px;
-  }
+
 }
 
 @media (min-width: 1280px) {
@@ -164,9 +150,7 @@ watch(() => playerStore.currentTrack, (track) => {
     padding-bottom: 110px;
   }
 
-  .music-player {
-    left: 260px;
-  }
+
 }
 
 @media (min-width: 1536px) {
@@ -179,9 +163,7 @@ watch(() => playerStore.currentTrack, (track) => {
     padding-bottom: 120px;
   }
 
-  .music-player {
-    left: 280px;
-  }
+
 }
 
 @supports (-webkit-touch-callout: none) {

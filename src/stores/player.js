@@ -26,7 +26,8 @@ export const usePlayerStore = defineStore('player', {
     prefetchedData: new Map(), // { videoId: { audioUrl, duration, info } }
     pendingPrefetches: new Set(), // Track in-flight prefetches to avoid duplicates
     currentAbortController: null,
-    dominantColor: '#121212'
+    dominantColor: '#121212',
+    isExpanded: false
   }),
 
   getters: {
@@ -671,6 +672,10 @@ export const usePlayerStore = defineStore('player', {
       
       // Also update apple-mobile-web-app-status-bar-style if needed
       // but black-translucent is usually best for "floating" content
+    },
+
+    setIsExpanded(value) {
+      this.isExpanded = value;
     }
   }
 });

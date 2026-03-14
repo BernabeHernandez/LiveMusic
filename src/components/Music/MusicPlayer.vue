@@ -15,7 +15,6 @@ import {
 const playerStore = usePlayerStore()    
 const audioElement = ref(null)
 const isSeeking = ref(false)
-const isExpanded = ref(false)
 const backgroundColor = ref('#121212')
 
 // Function to extract dominant color from image
@@ -81,11 +80,11 @@ const toggleFavorite = () => {
 }
 
 const expandPlayer = () => {
-  isExpanded.value = true
+  playerStore.setIsExpanded(true)
 }
 
 const closeExpandedPlayer = () => {
-  isExpanded.value = false
+  playerStore.setIsExpanded(false)
 }
 
 onMounted(() => {
@@ -125,12 +124,12 @@ const formatTime = (seconds) => {
   <audio ref="audioElement" preload="metadata"></audio>
 
   <ExpandedPlayer 
-    :isExpanded="isExpanded" 
+    :isExpanded="playerStore.isExpanded" 
     @close="closeExpandedPlayer"
   />
 
   <div 
-    v-if="playerStore.currentTrack && !isExpanded" 
+    v-if="playerStore.currentTrack && !playerStore.isExpanded" 
     class="player-bar"
     :style="{ '--bar-bg-color': backgroundColor }"
   >
@@ -224,8 +223,9 @@ const formatTime = (seconds) => {
   position: fixed;
   bottom: 0;
   left: 0;
+  right: 0;
   width: 100%;
-  height: 75px; /* Altura slim del diseño original */
+  height: 75px; 
   background: var(--bar-bg-color, #111);
   color: white;
   display: flex;
@@ -236,6 +236,27 @@ const formatTime = (seconds) => {
   z-index: 3000;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+}
+
+@media (min-width: 768px) {
+  .player-bar {
+    left: 240px;
+    width: calc(100% - 240px);
+  }
+}
+
+@media (min-width: 1280px) {
+  .player-bar {
+    left: 260px;
+    width: calc(100% - 260px);
+  }
+}
+
+@media (min-width: 1536px) {
+  .player-bar {
+    left: 280px;
+    width: calc(100% - 280px);
+  }
 }
 
 .track-info {
