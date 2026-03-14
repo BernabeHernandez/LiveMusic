@@ -670,8 +670,9 @@ export const usePlayerStore = defineStore('player', {
       }
       metaThemeColor.setAttribute('content', color);
       
-      // Also update apple-mobile-web-app-status-bar-style if needed
-      // but black-translucent is usually best for "floating" content
+      // Update body and HTML background to match player color for iOS home indicator
+      document.body.style.backgroundColor = color;
+      document.documentElement.style.backgroundColor = color;
     },
 
     setIsExpanded(value) {

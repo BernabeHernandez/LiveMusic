@@ -59,7 +59,6 @@ watch(() => playerStore.currentTrack, (track) => {
 .app-layout {
   min-height: 100vh;
   min-height: 100dvh;
-  min-height: -webkit-fill-available;
   display: flex;
   flex-direction: column;
   background: #121212;
@@ -170,7 +169,7 @@ watch(() => playerStore.currentTrack, (track) => {
 
 @supports (-webkit-touch-callout: none) {
   .app-layout {
-    height: -webkit-fill-available;
+    min-height: 100dvh;
   }
 }
 
