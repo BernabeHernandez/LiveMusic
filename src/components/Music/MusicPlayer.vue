@@ -173,7 +173,7 @@ const formatTime = (seconds) => {
           :class="{ active: playerStore.isShuffleEnabled }"
           title="Aleatorio"
         >
-          <Shuffle :size="18" />
+          <Shuffle :size="22" />
         </button>
         
         <button 
@@ -182,12 +182,12 @@ const formatTime = (seconds) => {
           :disabled="!canGoPrevious"
           title="Anterior"
         >
-          <SkipBack :size="20" />
+          <SkipBack :size="26" />
         </button>
         
         <button @click="playerStore.togglePlay()" class="play-button" title="Reproducir/Pausar">
-          <Play v-if="!playerStore.isPlaying" :size="24" />
-          <Pause v-else :size="24" />
+          <Play v-if="!playerStore.isPlaying" :size="30" />
+          <Pause v-else :size="30" />
         </button>
         
         <button 
@@ -196,7 +196,7 @@ const formatTime = (seconds) => {
           :disabled="!canGoNext"
           title="Siguiente"
         >
-          <SkipForward :size="20" />
+          <SkipForward :size="26" />
         </button>
 
         <button 
@@ -205,7 +205,7 @@ const formatTime = (seconds) => {
           :class="{ active: playerStore.isRepeatEnabled }"
           title="Repetir canción actual"
         >
-          <Repeat :size="18" />
+          <Repeat :size="22" />
         </button>
       </div>
 
@@ -430,8 +430,8 @@ const formatTime = (seconds) => {
   padding: 8px;
   border-radius: 50%;
   transition: all 0.2s;
-  width: 36px;
-  height: 36px;
+  width: 44px;
+  height: 44px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -455,8 +455,8 @@ const formatTime = (seconds) => {
 }
 
 .play-button {
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
   background: white;
   color: #000;
@@ -476,10 +476,10 @@ const formatTime = (seconds) => {
 @media (max-width: 768px) {
   .player-bar {
     height: auto;
-    padding: 6px 16px; 
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
+    padding: 2px 10px; 
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 2px);
     flex-direction: column;
-    gap: 2px;
+    gap: 0px;
   }
   
   .track-info {
@@ -487,7 +487,7 @@ const formatTime = (seconds) => {
     width: 100%;
     justify-content: space-between;
     padding: 0;
-    gap: 12px;
+    gap: 8px;
   }
 
   .track-title {
@@ -499,13 +499,13 @@ const formatTime = (seconds) => {
   }
 
   .track-thumbnail {
-    width: 44px; /* Reducido de 52px a 44px */
-    height: 44px;
+    width: 36px; /* Reducido aún más */
+    height: 36px;
   }
 
   .player-controls {
     width: 100%;
-    gap: 8px;
+    gap: 2px;
   }
 
   .progress-container {
@@ -531,13 +531,13 @@ const formatTime = (seconds) => {
   .controls {
     width: auto;
     justify-content: center;
-    gap: 20px; /* Espaciado "normal" no tan separado ni pegado */
-    padding: 4px 0;
+    gap: 20px; 
+    padding: 0px 0; /* Padding en 0 */
   }
 
   .play-button {
-    width: 42px; /* Reducido de 56px a 42px */
-    height: 42px;
+    width: 46px; /* Reducido levemente para que quepa mejor */
+    height: 46px;
     background: white;
     color: black;
     box-shadow: 0 4px 20px rgba(0,0,0,0.3);
@@ -547,7 +547,7 @@ const formatTime = (seconds) => {
     display: flex;
     justify-content: center;
     width: 100%;
-    margin-top: 2px;
+    margin-top: 0px;
   }
 
   .shuffle-button, .repeat-button {
