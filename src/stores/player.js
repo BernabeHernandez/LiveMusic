@@ -276,10 +276,16 @@ export const usePlayerStore = defineStore('player', {
         this.audio.addEventListener('play', () => {
           this.isPlaying = true;
           this.updatePositionState();
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing';
+          }
         });
 
         this.audio.addEventListener('pause', () => {
           this.isPlaying = false;
+          if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+          }
         });
 
         this.audio.addEventListener('canplay', () => {
@@ -567,8 +573,22 @@ export const usePlayerStore = defineStore('player', {
           artwork: [{ src: this.currentTrack.thumbnail, sizes: '512x512', type: 'image/jpeg' }]
         });
 
-        navigator.mediaSession.setActionHandler('play', () => this.audio?.play());
-        navigator.mediaSession.setActionHandler('pause', () => this.audio?.pause());
+        navigator.mediaSession.setActionHandler('play', async () => {
+          if (this.audio) {
+            try {
+              await this.audio.play();
+              navigator.mediaSession.playbackState = 'playing';
+            } catch (err) {
+              console.error('Error al reproducir desde MediaSession:', err);
+            }
+          }
+        });
+        navigator.mediaSession.setActionHandler('pause', () => {
+          if (this.audio) {
+            this.audio.pause();
+            navigator.mediaSession.playbackState = 'paused';
+          }
+        });
         navigator.mediaSession.setActionHandler('previoustrack', () => this.previousTrack());
         navigator.mediaSession.setActionHandler('nexttrack', () => this.nextTrack());
         
