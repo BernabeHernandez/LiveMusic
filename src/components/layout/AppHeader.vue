@@ -345,6 +345,10 @@ onMounted(loadLastSearch)
     height: 100%;
     gap: 1.5rem;
   }
+  
+  .hamburger-btn {
+    display: none;
+  }
 
   .logo {
     font-size: 1.4rem;

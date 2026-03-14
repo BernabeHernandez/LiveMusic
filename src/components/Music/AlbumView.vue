@@ -29,7 +29,12 @@ const emit = defineEmits(['close'])
 const playerStore = usePlayerStore()
 const tracks = ref([])
 const isLoading = ref(true)
+const isLoadingMore = ref(false)
+const hasMore = ref(false)
+const currentOffset = ref(0)
 const error = ref(null)
+
+const LIMIT = 20
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -38,19 +43,43 @@ const cleanUploader = (name) => {
   return name.replace(/\s*-\s*Topic$/i, '').replace(/YouTube/i, 'Oficial')
 }
 
-const fetchTracks = async () => {
-  isLoading.value = true
+const fetchTracks = async (loadMore = false) => {
+  if (loadMore) {
+    isLoadingMore.value = true
+  } else {
+    isLoading.value = true
+    tracks.value = []
+    currentOffset.value = 0
+  }
+  
   error.value = null
   try {
-    const response = await fetch(`${API_URL}/api/search/playlists/${props.album.id}/songs`)
+    const url = `${API_URL}/api/search/playlists/${props.album.id}/songs?limit=${LIMIT}&offset=${currentOffset.value}`
+    const response = await fetch(url)
     if (!response.ok) throw new Error('No se pudieron cargar las canciones')
+    
     const data = await response.json()
-    tracks.value = data.songs
+    
+    if (loadMore) {
+      tracks.value = [...tracks.value, ...data.songs]
+    } else {
+      tracks.value = data.songs
+    }
+    
+    hasMore.value = data.hasMore
+    currentOffset.value = data.offset
   } catch (err) {
     console.error('Error fetching album tracks:', err)
-    error.value = err.message
+    if (!loadMore) error.value = err.message
   } finally {
     isLoading.value = false
+    isLoadingMore.value = false
+  }
+}
+
+const manualLoadMore = () => {
+  if (!isLoadingMore.value && hasMore.value) {
+    fetchTracks(true)
   }
 }
 
@@ -111,7 +140,7 @@ onUnmounted(() => {
                 Oficial
               </span>
             </div>
-            <p class="album-meta">{{ tracks.length }} canciones</p>
+            <p class="album-meta">{{ tracks.length }} canciones filtradas</p>
           </div>
           
           <div class="main-actions">
@@ -140,7 +169,7 @@ onUnmounted(() => {
           <div v-else class="tracklist">
             <div 
               v-for="(track, index) in tracks" 
-              :key="track.videoId"
+              :key="`${track.videoId}-${index}`"
               class="track-item"
               :class="{ 'is-playing': playerStore.currentTrack?.videoId === track.videoId }"
               @click="playTrack(track, index)"
@@ -156,6 +185,18 @@ onUnmounted(() => {
               <span class="track-duration">{{ formatDuration(track.duration) }}</span>
               <button class="track-more">
                 <ChevronRight :size="20" />
+              </button>
+            </div>
+
+            <!-- Botón Cargar Más -->
+            <div v-if="isLoadingMore" class="loading-more-inline">
+              <Loader :size="24" class="spinner" />
+              <p>Cargando más...</p>
+            </div>
+
+            <div v-if="hasMore && !isLoadingMore" class="load-more-container">
+              <button class="load-more-btn" @click="manualLoadMore">
+                Cargar más canciones
               </button>
             </div>
           </div>
@@ -477,6 +518,44 @@ onUnmounted(() => {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+.load-more-container {
+  padding: 2rem 0;
+  display: flex;
+  justify-content: center;
+}
+
+.load-more-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white;
+  padding: 0.75rem 2rem;
+  border-radius: 25px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.load-more-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.load-more-btn:active {
+  transform: translateY(0);
+}
+
+.loading-more-inline {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 2rem 0;
+  color: #888;
+  font-size: 0.9rem;
+}
+
 
 /* Animations */
 .slide-up-enter-active,
