@@ -303,6 +303,7 @@ const handleTouchEnd = () => {
   flex-direction: column;
   height: 100vh;
   height: 100dvh; 
+  height: -webkit-fill-available;
   transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -865,7 +866,6 @@ const handleTouchEnd = () => {
 @supports (padding: max(0px)) {
   .expanded-player {
     padding-top: env(safe-area-inset-top);
-    padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
@@ -873,7 +873,7 @@ const handleTouchEnd = () => {
 
 @supports (-webkit-touch-callout: none) {
   .expanded-player {
-    height: -webkit-fill-available;
+    min-height: -webkit-fill-available;
   }
 }
 

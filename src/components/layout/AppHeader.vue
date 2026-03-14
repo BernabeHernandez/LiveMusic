@@ -148,7 +148,7 @@ onMounted(loadLastSearch)
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  padding: 0.75rem 1rem;
+  padding: calc(env(safe-area-inset-top, 0px) + 0.5rem) 1rem 0.75rem;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -312,8 +312,8 @@ onMounted(loadLastSearch)
 
 @media (max-width: 767px) {
   .app-header {
-    padding: 0.5rem 1rem 0.75rem;
-    gap: 0.75rem;
+    padding: calc(env(safe-area-inset-top, 0px) + 0.4rem) 1rem 0.6rem;
+    gap: 0.5rem;
   }
 
   .header-center {
