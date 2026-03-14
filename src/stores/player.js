@@ -272,6 +272,16 @@ export const usePlayerStore = defineStore('player', {
           this.nextTrack();
         });
 
+        // Sincronizar estado real del audio con la app para evitar bugs en pantalla bloqueada
+        this.audio.addEventListener('play', () => {
+          this.isPlaying = true;
+          this.updatePositionState();
+        });
+
+        this.audio.addEventListener('pause', () => {
+          this.isPlaying = false;
+        });
+
         this.audio.addEventListener('canplay', () => {
           console.log('Audio listo para reproducir');
           console.log('Duración final:', this.duration);
@@ -444,12 +454,11 @@ export const usePlayerStore = defineStore('player', {
 
     togglePlay() {
       if (!this.audio) return;
-      if (this.isPlaying) {
+      if (!this.audio.paused) {
         this.audio.pause();
       } else {
         this.audio.play();
       }
-      this.isPlaying = !this.isPlaying;
     },
 
     seekTo(percent) {
@@ -462,6 +471,7 @@ export const usePlayerStore = defineStore('player', {
 
       if (time <= maxDuration) {
         this.audio.currentTime = time;
+        this.updatePositionState();
       }
     },
 
@@ -557,10 +567,42 @@ export const usePlayerStore = defineStore('player', {
           artwork: [{ src: this.currentTrack.thumbnail, sizes: '512x512', type: 'image/jpeg' }]
         });
 
-        navigator.mediaSession.setActionHandler('play', () => this.togglePlay());
-        navigator.mediaSession.setActionHandler('pause', () => this.togglePlay());
+        navigator.mediaSession.setActionHandler('play', () => this.audio?.play());
+        navigator.mediaSession.setActionHandler('pause', () => this.audio?.pause());
         navigator.mediaSession.setActionHandler('previoustrack', () => this.previousTrack());
         navigator.mediaSession.setActionHandler('nexttrack', () => this.nextTrack());
+        
+        navigator.mediaSession.setActionHandler('seekto', (details) => {
+           if (details.fastSeek && 'fastSeek' in this.audio) {
+             this.audio.fastSeek(details.seekTime);
+             return;
+           }
+           
+           if (this.audio && details.seekTime !== undefined) {
+             this.audio.currentTime = details.seekTime;
+             this.updatePositionState();
+           }
+        });
+        
+        this.updatePositionState();
+      }
+    },
+
+    updatePositionState() {
+      if ('mediaSession' in navigator && this.audio && !isNaN(this.audio.duration)) {
+        try {
+          const expectedDuration = Number.isFinite(this.audio.duration) ? this.audio.duration : this.duration;
+          
+          if (expectedDuration > 0) {
+            navigator.mediaSession.setPositionState({
+              duration: expectedDuration,
+              playbackRate: this.audio.playbackRate,
+              position: this.audio.currentTime
+            });
+          }
+        } catch (e) {
+          console.warn("Could not set position state:", e);
+        }
       }
     },
 
