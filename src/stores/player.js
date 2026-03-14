@@ -25,7 +25,8 @@ export const usePlayerStore = defineStore('player', {
     activeLocalObjectUrl: null,
     prefetchedData: new Map(), // { videoId: { audioUrl, duration, info } }
     pendingPrefetches: new Set(), // Track in-flight prefetches to avoid duplicates
-    currentAbortController: null
+    currentAbortController: null,
+    dominantColor: '#121212'
   }),
 
   getters: {
@@ -316,6 +317,9 @@ export const usePlayerStore = defineStore('player', {
         videoId: targetVideoId,
         duration: trackInfo.duration || 0
       };
+
+      // Iniciar extracción de color para la nueva canción
+      this.extractColor(this.currentTrack.thumbnail);
 
       const existingIndex = this.queue.findIndex(t => t.videoId === targetVideoId);
       if (existingIndex !== -1) {
@@ -654,6 +658,61 @@ export const usePlayerStore = defineStore('player', {
       }
       // Reemplazar mqdefault, hqdefault, sddefault por maxresdefault
       return url.replace(/\/(mqdefault|hqdefault|sddefault|default)\.jpg/, '/maxresdefault.jpg');
+    },
+
+    extractColor(imageUrl) {
+      if (!imageUrl) return;
+      
+      const img = new Image();
+      img.crossOrigin = 'Anonymous';
+      img.src = imageUrl;
+      
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const context = canvas.getContext('2d');
+        canvas.width = 10;
+        canvas.height = 10;
+        
+        context.drawImage(img, 0, 0, 10, 10);
+        const data = context.getImageData(0, 0, 10, 10).data;
+        
+        let r = 0, g = 0, b = 0;
+        for (let i = 0; i < data.length; i += 4) {
+          r += data[i];
+          g += data[i+1];
+          b += data[i+2];
+        }
+        
+        r = Math.floor(r / (data.length / 4));
+        g = Math.floor(g / (data.length / 4));
+        b = Math.floor(b / (data.length / 4));
+        
+        // Oscurecer ligeramente para que el texto blanco contraste mejor
+        const darkenFactor = 0.85;
+        const dr = Math.floor(r * darkenFactor);
+        const dg = Math.floor(g * darkenFactor);
+        const db = Math.floor(b * darkenFactor);
+        
+        this.dominantColor = `rgb(${dr}, ${dg}, ${db})`;
+        this.updateThemeColor(this.dominantColor);
+      };
+    },
+
+    updateThemeColor(color) {
+      // Actualizar el meta tag theme-color para navegadores móviles/PWA
+      let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (!metaThemeColor) {
+        metaThemeColor = document.createElement('meta');
+        metaThemeColor.name = 'theme-color';
+        document.head.appendChild(metaThemeColor);
+      }
+      
+      // Convertir rgb a hex para mayor compatibilidad si es necesario, pero rgb funciona en Chrome
+      metaThemeColor.setAttribute('content', color);
+      
+      // Para Safari (iOS) intentamos black-translucent con background color en el body
+      // o simplemente dejar que viewport-fit=cover haga su magia si el fondo del componente llega arriba
+      document.documentElement.style.setProperty('--app-theme-color', color);
     }
   }
 });

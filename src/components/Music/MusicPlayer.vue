@@ -16,50 +16,8 @@ const playerStore = usePlayerStore()
 const audioElement = ref(null)
 const isSeeking = ref(false)
 const isExpanded = ref(false)
-const backgroundColor = ref('#121212')
+const backgroundColor = computed(() => playerStore.dominantColor)
 
-// Function to extract dominant color from image
-const extractDominantColor = (imageUrl) => {
-  if (!imageUrl) return
-  
-  const img = new Image()
-  img.crossOrigin = 'Anonymous'
-  img.src = imageUrl
-  
-  img.onload = () => {
-    const canvas = document.createElement('canvas')
-    const context = canvas.getContext('2d')
-    canvas.width = 10
-    canvas.height = 10
-    
-    context.drawImage(img, 0, 0, 10, 10)
-    const data = context.getImageData(0, 0, 10, 10).data
-    
-    let r = 0, g = 0, b = 0
-    for (let i = 0; i < data.length; i += 4) {
-      r += data[i]
-      g += data[i+1]
-      b += data[i+2]
-    }
-    
-    r = Math.floor(r / (data.length / 4))
-    g = Math.floor(g / (data.length / 4))
-    b = Math.floor(b / (data.length / 4))
-    
-    // produces a more vibrant color for the bar
-    const darkenFactor = 0.85
-    const dr = Math.floor(r * darkenFactor)
-    const dg = Math.floor(g * darkenFactor)
-    const db = Math.floor(b * darkenFactor)
-    
-    backgroundColor.value = `rgb(${dr}, ${dg}, ${db})`
-  }
-}
-
-// Watch for track changes
-watch(() => playerStore.currentTrack?.thumbnail, (newThumb) => {
-  if (newThumb) extractDominantColor(newThumb)
-}, { immediate: true })
 
 const canGoPrevious = computed(() => {
   return playerStore.currentIndex > 0 || playerStore.currentTime > 3

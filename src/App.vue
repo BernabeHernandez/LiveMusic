@@ -54,8 +54,9 @@ onMounted(() => {
   min-height: -webkit-fill-available;
   display: flex;
   flex-direction: column;
-  background: #121212;
+  background: var(--app-theme-color, #121212);
   color: white;
+  transition: background 0.8s ease;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;
   position: relative;
