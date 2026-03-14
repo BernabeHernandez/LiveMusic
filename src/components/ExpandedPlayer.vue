@@ -294,16 +294,16 @@ const handleTouchEnd = () => {
   position: fixed;
   inset: 0;
   background-color: var(--bg-color, #000);
-  z-index: 2000;
+  z-index: 9999;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  height: 100vh;
-  height: 100dvh; 
-  height: -webkit-fill-available;
+  width: 100%;
+  height: 100%;
   transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
 .album-background {
@@ -335,14 +335,14 @@ const handleTouchEnd = () => {
 }
 
 .player-layout {
-  position: relative;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 3;
   display: flex;
   flex-direction: column;
-  height: 100%;
-  width: 100%;
-  max-height: 100vh;
-  max-height: 100dvh;
   overflow: hidden;
 }
 
@@ -863,16 +863,12 @@ const handleTouchEnd = () => {
 }
 
 @supports (padding: max(0px)) {
-  .expanded-player {
-    padding-top: env(safe-area-inset-top);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+  .player-header {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 12px);
   }
-}
-
-@supports (-webkit-touch-callout: none) {
-  .expanded-player {
-    min-height: -webkit-fill-available;
+  
+  .player-body {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
   }
 }
 

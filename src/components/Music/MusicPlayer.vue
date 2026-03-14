@@ -225,17 +225,19 @@ const formatTime = (seconds) => {
   left: 0;
   right: 0;
   width: 100%;
-  height: 75px; 
+  height: calc(75px + env(safe-area-inset-bottom, 0px)); 
   background: var(--bar-bg-color, #111);
   color: white;
   display: flex;
   align-items: center;
   padding: 0 16px;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5);
   z-index: 3000;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  box-sizing: border-box;
 }
 
 @media (min-width: 768px) {
@@ -475,6 +477,7 @@ const formatTime = (seconds) => {
   .player-bar {
     height: auto;
     padding: 6px 16px; 
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
     flex-direction: column;
     gap: 2px;
   }
