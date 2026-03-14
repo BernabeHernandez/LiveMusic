@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { usePlayerStore } from './stores/player'
 import OfflineNotice from './components/OfflineNotice.vue'
 import AppHeader from './components/layout/AppHeader.vue'
@@ -45,6 +45,13 @@ const closeSidebar = () => {
 onMounted(() => {
   playerStore.initStore()
   console.log('Favoritos cargados:', playerStore.favoritesCount)
+})
+
+// Watch for track removal to reset status bar color
+watch(() => playerStore.currentTrack, (track) => {
+  if (!track) {
+    playerStore.updateThemeColor('#121212') // Default app background
+  }
 })
 </script>
 

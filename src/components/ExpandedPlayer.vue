@@ -1,9 +1,29 @@
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue'
 import { usePlayerStore } from '../stores/player'
+import { 
+  Play, 
+  Pause, 
+  SkipBack, 
+  SkipForward, 
+  Shuffle, 
+  Repeat,
+  Heart,
+  ChevronDown
+} from 'lucide-vue-next'
+import DownloadButton from './DownloadButton.vue'
 
 const playerStore = usePlayerStore()
 const backgroundColor = ref('#121212') // Default dark color
+
+const props = defineProps({
+  isExpanded: {
+    type: Boolean,
+    default: false
+  }
+})
+
+const emit = defineEmits(['close'])
 
 // Function to extract dominant color from image
 const extractDominantColor = (imageUrl) => {
@@ -40,6 +60,7 @@ const extractDominantColor = (imageUrl) => {
     const db = Math.floor(b * darkenFactor)
     
     backgroundColor.value = `rgb(${dr}, ${dg}, ${db})`
+    playerStore.updateThemeColor(backgroundColor.value)
   }
 }
 
@@ -47,26 +68,13 @@ const extractDominantColor = (imageUrl) => {
 watch(() => playerStore.currentTrack?.thumbnail, (newThumb) => {
   if (newThumb) extractDominantColor(newThumb)
 }, { immediate: true })
-import { 
-  Play, 
-  Pause, 
-  SkipBack, 
-  SkipForward, 
-  Shuffle, 
-  Repeat,
-  Heart,
-  ChevronDown
-} from 'lucide-vue-next'
-import DownloadButton from './DownloadButton.vue'
 
-const props = defineProps({
-  isExpanded: {
-    type: Boolean,
-    default: false
+// Ensure theme color is updated when expanding/collapsing
+watch(() => props.isExpanded, (expanded) => {
+  if (expanded) {
+    playerStore.updateThemeColor(backgroundColor.value)
   }
 })
-
-const emit = defineEmits(['close'])
 
 const isCurrentFavorite = computed(() => {
   return playerStore.isCurrentTrackFavorite
@@ -514,6 +522,7 @@ const handleTouchEnd = () => {
 
 .progress-slider {
   -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   height: 6px;
   border-radius: 3px;
@@ -531,6 +540,7 @@ const handleTouchEnd = () => {
 
 .progress-slider::-webkit-slider-thumb {
   -webkit-appearance: none;
+  appearance: none;
   width: 14px;
   height: 14px;
   border-radius: 50%;

@@ -25,7 +25,8 @@ export const usePlayerStore = defineStore('player', {
     activeLocalObjectUrl: null,
     prefetchedData: new Map(), // { videoId: { audioUrl, duration, info } }
     pendingPrefetches: new Set(), // Track in-flight prefetches to avoid duplicates
-    currentAbortController: null
+    currentAbortController: null,
+    dominantColor: '#121212'
   }),
 
   getters: {
@@ -654,6 +655,22 @@ export const usePlayerStore = defineStore('player', {
       }
       // Reemplazar mqdefault, hqdefault, sddefault por maxresdefault
       return url.replace(/\/(mqdefault|hqdefault|sddefault|default)\.jpg/, '/maxresdefault.jpg');
+    },
+    
+    updateThemeColor(color) {
+      this.dominantColor = color;
+      
+      // Update meta theme-color
+      let metaThemeColor = document.querySelector('meta[name="theme-color"]');
+      if (!metaThemeColor) {
+        metaThemeColor = document.createElement('meta');
+        metaThemeColor.name = 'theme-color';
+        document.head.appendChild(metaThemeColor);
+      }
+      metaThemeColor.setAttribute('content', color);
+      
+      // Also update apple-mobile-web-app-status-bar-style if needed
+      // but black-translucent is usually best for "floating" content
     }
   }
 });

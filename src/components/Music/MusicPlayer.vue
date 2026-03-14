@@ -53,6 +53,7 @@ const extractDominantColor = (imageUrl) => {
     const db = Math.floor(b * darkenFactor)
     
     backgroundColor.value = `rgb(${dr}, ${dg}, ${db})`
+    playerStore.updateThemeColor(backgroundColor.value)
   }
 }
 
@@ -340,6 +341,7 @@ const formatTime = (seconds) => {
 
 .progress-slider {
   -webkit-appearance: none;
+  appearance: none;
   flex: 1;
   height: 4px;
   border-radius: 2px;
