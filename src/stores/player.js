@@ -362,42 +362,37 @@ export const usePlayerStore = defineStore('player', {
         console.log('🎵 Cargando canción:', videoId);
 
         let audioSourceUrl = null;
+        let isOffline = false;
 
-        // 1. Revisar en IndexedDB si la canción está descargada
-        const downloadedBlob = await dbService.getDownloadBlob(videoId);
+        // VERIFICAR PREFETCH ANTES DE INDEXEDDB PARA EVITAR DELAYS EN BACKGROUND
+        const prefetched = this.prefetchedData.get(targetVideoId);
 
-        if (downloadedBlob) {
-          console.log('⚡ Reproduciendo OFFLINE');
-          if (this.activeLocalObjectUrl) URL.revokeObjectURL(this.activeLocalObjectUrl);
-          audioSourceUrl = URL.createObjectURL(downloadedBlob);
-          this.activeLocalObjectUrl = audioSourceUrl;
-
-          const metadata = await dbService.getDownloadMetadata(targetVideoId);
-          if (metadata && this.currentTrack.videoId === targetVideoId) {
-            this.backendDuration = metadata.duration || 0;
-            this.currentTrack.title = metadata.title || this.currentTrack.title;
-            this.currentTrack.artist = metadata.artist || this.currentTrack.artist;
-            this.currentTrack.thumbnail = this.upgradeThumbnail(metadata.thumbnail || this.currentTrack.thumbnail);
+        if (prefetched) {
+          console.log('⚡ Reproduciendo desde PREFETCH:', targetVideoId);
+          audioSourceUrl = prefetched.audioUrl;
+          this.backendDuration = prefetched.duration;
+          
+          if (prefetched.info && this.currentTrack.videoId === targetVideoId) {
+            this.currentTrack.title = prefetched.info.title || this.currentTrack.title;
+            this.currentTrack.artist = prefetched.info.artist || prefetched.info.uploader || this.currentTrack.artist;
+            this.currentTrack.thumbnail = this.upgradeThumbnail(prefetched.info.thumbnail || this.currentTrack.thumbnail);
+            this.currentTrack.duration = prefetched.info.duration || this.currentTrack.duration;
             this.queue[targetIndex] = { ...this.currentTrack };
           }
+          this.prefetchedData.delete(targetVideoId);
+          console.log('  - Pre-fetch consumido');
         } else {
-          // 2. Reproducción ONLINE normal
-          const prefetched = this.prefetchedData.get(targetVideoId);
+          // 1. Revisar en IndexedDB si la canción está descargada (solo si no hay prefetch)
+          const downloadedBlob = await dbService.getDownloadBlob(videoId);
 
-          if (prefetched) {
-            console.log('⚡ Reproduciendo desde PREFETCH:', targetVideoId);
-            audioSourceUrl = prefetched.audioUrl;
-            this.backendDuration = prefetched.duration;
-            if (prefetched.info && this.currentTrack.videoId === targetVideoId) {
-              this.currentTrack.title = prefetched.info.title || this.currentTrack.title;
-              this.currentTrack.artist = prefetched.info.artist || prefetched.info.uploader || this.currentTrack.artist;
-              this.currentTrack.thumbnail = this.upgradeThumbnail(prefetched.info.thumbnail || this.currentTrack.thumbnail);
-              this.currentTrack.duration = prefetched.info.duration || this.currentTrack.duration;
-              this.queue[targetIndex] = { ...this.currentTrack };
-            }
-            this.prefetchedData.delete(targetVideoId);
-            console.log('  - Pre-fetch consumido');
+          if (downloadedBlob) {
+            console.log('⚡ Reproduciendo OFFLINE');
+            isOffline = true;
+            if (this.activeLocalObjectUrl) URL.revokeObjectURL(this.activeLocalObjectUrl);
+            audioSourceUrl = URL.createObjectURL(downloadedBlob);
+            this.activeLocalObjectUrl = audioSourceUrl;
           } else {
+            // 2. Reproducción ONLINE normal
             console.log('  - Buscando URL en backend:', targetVideoId);
             try {
               const authStore = useAuthStore();
@@ -410,26 +405,6 @@ export const usePlayerStore = defineStore('player', {
 
               audioSourceUrl = data.audioUrl;
               this.backendDuration = data.duration || 0;
-
-              // Actualizamos info básica si no la tenemos
-              fetch(`${API_URL}/api/video-info/${targetVideoId}`, { signal })
-                .then(r => r.json())
-                .then(info => {
-                  if (info && info.title && this.currentTrack?.videoId === targetVideoId) {
-                    this.currentTrack.title = info.title;
-                    this.currentTrack.artist = info.uploader || 'YouTube';
-                    if (info.thumbnail) {
-                      this.currentTrack.thumbnail = this.upgradeThumbnail(info.thumbnail);
-                    }
-                    this.currentTrack.duration = info.duration || this.currentTrack.duration;
-                    this.queue[targetIndex] = { ...this.currentTrack };
-                    this.updateMediaSession();
-                  }
-                })
-                .catch(err => {
-                  if (err.name !== 'AbortError') console.warn('Metadata extra falló:', err);
-                });
-
             } catch (err) {
               if (err.name === 'AbortError') return;
               throw err;
@@ -446,6 +421,7 @@ export const usePlayerStore = defineStore('player', {
           console.log('  - Estableciendo audio.src:', audioSourceUrl.substring(0, 50) + '...');
           this.audio.src = audioSourceUrl;
 
+          // REPRODUCIR INMEDIATAMENTE ANTES DE CUALQUIER METADATA FETCH
           try {
             await this.audio.play();
             console.log('  - Reproducción iniciada');
@@ -458,6 +434,39 @@ export const usePlayerStore = defineStore('player', {
               throw playError;
             }
           }
+        }
+
+        // --- FETCH DE METADATA EN SEGUNDO PLANO DESPUÉS DE INICIAR EL AUDIO ---
+        if (isOffline) {
+          dbService.getDownloadMetadata(targetVideoId).then(metadata => {
+            if (metadata && this.currentTrack.videoId === targetVideoId) {
+              this.backendDuration = metadata.duration || 0;
+              this.currentTrack.title = metadata.title || this.currentTrack.title;
+              this.currentTrack.artist = metadata.artist || this.currentTrack.artist;
+              this.currentTrack.thumbnail = this.upgradeThumbnail(metadata.thumbnail || this.currentTrack.thumbnail);
+              this.queue[targetIndex] = { ...this.currentTrack };
+              this.updateMediaSession();
+            }
+          }).catch(e => console.warn(e));
+        } else if (!prefetched) {
+          // Actualizamos info básica asíncronamente
+          fetch(`${API_URL}/api/video-info/${targetVideoId}`, { signal })
+            .then(r => r.json())
+            .then(info => {
+              if (info && info.title && this.currentTrack?.videoId === targetVideoId) {
+                this.currentTrack.title = info.title;
+                this.currentTrack.artist = info.uploader || 'YouTube';
+                if (info.thumbnail) {
+                  this.currentTrack.thumbnail = this.upgradeThumbnail(info.thumbnail);
+                }
+                this.currentTrack.duration = info.duration || this.currentTrack.duration;
+                this.queue[targetIndex] = { ...this.currentTrack };
+                this.updateMediaSession();
+              }
+            })
+            .catch(err => {
+              if (err.name !== 'AbortError') console.warn('Metadata extra falló:', err);
+            });
         }
       } catch (error) {
         if (error.name === 'AbortError') return;
@@ -622,15 +631,24 @@ export const usePlayerStore = defineStore('player', {
     },
 
     updatePositionState() {
-      if ('mediaSession' in navigator && this.audio && !isNaN(this.audio.duration)) {
+      if ('mediaSession' in navigator && this.audio) {
         try {
-          const expectedDuration = Number.isFinite(this.audio.duration) ? this.audio.duration : this.duration;
+          // Utilizar backendDuration si está disponible para evitar bug de duplicación en iOS PWA
+          let expectedDuration = this.duration;
+          if (this.backendDuration > 0) {
+            expectedDuration = this.backendDuration;
+          } else if (Number.isFinite(this.audio.duration) && !isNaN(this.audio.duration)) {
+            expectedDuration = this.audio.duration;
+          }
           
           if (expectedDuration > 0) {
+            let pos = this.audio.currentTime;
+            if (pos > expectedDuration) pos = expectedDuration;
+            
             navigator.mediaSession.setPositionState({
               duration: expectedDuration,
-              playbackRate: this.audio.playbackRate,
-              position: this.audio.currentTime
+              playbackRate: this.audio.playbackRate || 1,
+              position: pos
             });
           }
         } catch (e) {
