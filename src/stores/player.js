@@ -379,6 +379,11 @@ export const usePlayerStore = defineStore('player', {
             this.currentTrack.duration = prefetched.info.duration || this.currentTrack.duration;
             this.queue[targetIndex] = { ...this.currentTrack };
           }
+          if (prefetched.isOffline) {
+            isOffline = true;
+            if (this.activeLocalObjectUrl) URL.revokeObjectURL(this.activeLocalObjectUrl);
+            this.activeLocalObjectUrl = audioSourceUrl;
+          }
           this.prefetchedData.delete(targetVideoId);
           console.log('  - Pre-fetch consumido');
         } else {
@@ -675,6 +680,17 @@ export const usePlayerStore = defineStore('player', {
           // Revisar si está descargada
           const isDownloaded = await dbService.isDownloaded(vid);
           if (isDownloaded) {
+            const downloadedBlob = await dbService.getDownloadBlob(vid);
+            if (downloadedBlob) {
+              const metadata = await dbService.getDownloadMetadata(vid);
+              this.prefetchedData.set(vid, {
+                audioUrl: URL.createObjectURL(downloadedBlob),
+                duration: metadata ? (metadata.duration || 0) : 0,
+                info: track,
+                isOffline: true
+              });
+              console.log('    ✅ Pre-carga offline lista:', vid);
+            }
             this.pendingPrefetches.delete(vid);
             continue;
           }
@@ -736,6 +752,9 @@ export const usePlayerStore = defineStore('player', {
       this.duration = 0;
       this.progress = 0;
       this.favorites = [];
+      this.prefetchedData.forEach(v => {
+        if (v.isOffline) URL.revokeObjectURL(v.audioUrl);
+      });
       this.prefetchedData.clear();
       this.pendingPrefetches.clear();
       console.log('🧹 Estado del reproductor reiniciado');
