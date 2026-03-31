@@ -63,11 +63,10 @@ const formatDate = (dateString) => {
     <div class="header">
       <div class="header-content">
         <div class="header-icon">
-          <Heart :size="48" fill="currentColor" />
+          <Heart :size="24" fill="currentColor" />
         </div>
         <div class="header-info">
-          <p class="header-label">Playlist</p>
-          <h1 class="header-title">Tus Favoritos</h1>
+          <h2 class="header-title">Tus favoritos</h2>
           <p class="header-stats">
             {{ favorites.length }} {{ favorites.length === 1 ? 'canción' : 'canciones' }}
           </p>
@@ -157,15 +156,15 @@ const formatDate = (dateString) => {
 
 <style scoped>
 .favorites-container {
-  padding: 20px 30px 100px;
-  max-width: 1400px;
-  margin: 0 auto;
+  padding: 0 1rem 100px;
+  width: 100%;
 }
 
 .header {
   background: linear-gradient(180deg, rgba(255, 45, 85, 0.15) 0%, #1a1a1a 100%);
   border-radius: 20px;
-  padding: 60px 40px;
+  padding: 40px;
+  margin-top: 0.75rem;
   margin-bottom: 30px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
@@ -173,12 +172,12 @@ const formatDate = (dateString) => {
 .header-content {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 20px;
 }
 
 .header-icon {
-  width: 180px;
-  height: 180px;
+  width: 80px;
+  height: 80px;
   background: linear-gradient(135deg, #ff2d55 0%, #ff375f 100%);
   border-radius: 20px;
   display: flex;
@@ -203,10 +202,22 @@ const formatDate = (dateString) => {
 }
 
 .header-title {
-  font-size: 48px;
-  font-weight: bold;
-  margin: 0 0 12px 0;
-  color: #fff;
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 700;
+  background: linear-gradient(to right, white, rgba(255, 255, 255, 0.6));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  margin: 0 0 8px 0;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+@media (min-width: 768px) {
+  .header-title {
+    font-size: 2.25rem; /* slightly larger for the main header, but still consistent in style */
+  }
 }
 
 .header-stats {
@@ -474,7 +485,7 @@ const formatDate = (dateString) => {
 
 @media (max-width: 768px) {
   .favorites-container {
-    padding: 20px 15px 100px;
+    padding: 0 0.5rem 100px;
   }
 
   .header {
@@ -484,16 +495,14 @@ const formatDate = (dateString) => {
   .header-content {
     flex-direction: column;
     text-align: center;
+    gap: 15px;
   }
 
   .header-icon {
-    width: 120px;
-    height: 120px;
+    width: 60px;
+    height: 60px;
   }
 
-  .header-title {
-    font-size: 32px;
-  }
 
   .list-header,
   .track-item {

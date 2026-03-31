@@ -139,8 +139,9 @@ const formatTime = (seconds) => {
     v-if="playerStore.currentTrack && !playerStore.isExpanded" 
     class="player-bar"
     :style="{ '--bar-bg-color': backgroundColor }"
+    @click="expandPlayer"
   >
-    <div class="track-info" @click="expandPlayer">
+    <div class="track-info">
       <img :src="playerStore.currentTrack.thumbnail" alt="Cover" class="track-thumbnail" />
       <div class="track-details">
         <p class="track-title">{{ playerStore.currentTrack.title }}</p>
@@ -163,11 +164,12 @@ const formatTime = (seconds) => {
           type="range" 
           min="0" max="100" step="0.1"
           :value="localProgress"
-          @mousedown="handleSeekStart"
-          @touchstart="handleSeekStart"
-          @input="handleSeek"
-          @change="handleSeekEnd"
-          @touchend="handleSeekEnd"
+          @mousedown.stop="handleSeekStart"
+          @touchstart.stop="handleSeekStart"
+          @input.stop="handleSeek"
+          @change.stop="handleSeekEnd"
+          @touchend.stop="handleSeekEnd"
+          @click.stop
           :style="`--progress: ${localProgress}%`"
           class="progress-slider"
         />
@@ -176,7 +178,7 @@ const formatTime = (seconds) => {
 
       <div class="controls">
         <button 
-          @click="playerStore.toggleShuffle()" 
+          @click.stop="playerStore.toggleShuffle()" 
           class="control-button shuffle-button" 
           :class="{ active: playerStore.isShuffleEnabled }"
           title="Aleatorio"
@@ -185,7 +187,7 @@ const formatTime = (seconds) => {
         </button>
         
         <button 
-          @click="playerStore.previousTrack()" 
+          @click.stop="playerStore.previousTrack()" 
           class="control-button" 
           :disabled="!canGoPrevious"
           title="Anterior"
@@ -193,13 +195,13 @@ const formatTime = (seconds) => {
           <SkipBack :size="26" />
         </button>
         
-        <button @click="playerStore.togglePlay()" class="play-button" title="Reproducir/Pausar">
+        <button @click.stop="playerStore.togglePlay()" class="play-button" title="Reproducir/Pausar">
           <Play v-if="!playerStore.isPlaying" :size="30" />
           <Pause v-else :size="30" />
         </button>
         
         <button 
-          @click="playerStore.nextTrack()" 
+          @click.stop="playerStore.nextTrack()" 
           class="control-button" 
           :disabled="!canGoNext"
           title="Siguiente"
@@ -208,7 +210,7 @@ const formatTime = (seconds) => {
         </button>
 
         <button 
-          @click="playerStore.toggleRepeat()" 
+          @click.stop="playerStore.toggleRepeat()" 
           class="control-button repeat-button" 
           :class="{ active: playerStore.isRepeatEnabled }"
           title="Repetir canción actual"
@@ -350,6 +352,7 @@ const formatTime = (seconds) => {
   justify-content: center;
   gap: 0;
   position: relative;
+  pointer-events: none; /* Los clics pasan a través del contenedor */
 }
 
 .progress-container {
@@ -360,6 +363,7 @@ const formatTime = (seconds) => {
   display: flex;
   align-items: center;
   width: 100%;
+  pointer-events: auto; /* Re-habilitar clics para la barra y etiquetas */
 }
 
 .time-label {
@@ -426,6 +430,7 @@ const formatTime = (seconds) => {
   gap: 16px; /* Más espacio */
   align-items: center;
   justify-content: center;
+  pointer-events: auto; /* Re-habilitar clics para los botones */
 }
 
 .control-button {
@@ -558,6 +563,54 @@ const formatTime = (seconds) => {
 
   .shuffle-button, .repeat-button {
     display: flex;
+  }
+}
+
+@media (min-width: 1024px) {
+  .player-bar {
+    height: 90px;
+    padding: 0 24px;
+    cursor: pointer;
+  }
+
+  .track-info {
+    flex: 0 0 300px;
+    max-width: 300px;
+    margin-right: 20px;
+  }
+
+  .player-controls {
+    flex: 1;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+    gap: 32px;
+    position: static;
+  }
+
+  .progress-container {
+    position: static;
+    flex: 1;
+    max-width: 600px;
+    margin: 0 20px;
+    order: 1;
+    pointer-events: auto;
+  }
+
+  .controls {
+    flex: 0 0 auto;
+    gap: 20px;
+    order: 2;
+    background: transparent;
+    pointer-events: auto;
+  }
+
+  .queue-info {
+    flex: 0 0 100px;
+    display: flex;
+    justify-content: flex-end;
+    order: 3;
+    margin-top: 0;
   }
 }
 </style>

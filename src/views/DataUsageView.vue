@@ -1,8 +1,8 @@
 <template>
   <div class="usage-container">
     <header class="usage-header">
-      <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60">
-        Uso de Datos
+      <h1 class="usage-title">
+        Uso de datos
       </h1>
       <div class="header-subtitle">
         <p class="text-[var(--live-text-secondary)]">Consumo de red en los últimos 7 días</p>
@@ -228,15 +228,33 @@ const getBarWidth = (value) => {
 
 <style scoped>
 .usage-container {
-  padding: 1rem;
+  padding: 0 1rem;
   padding-bottom: 140px;
-  max-width: 1000px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .usage-header {
-  margin-bottom: 2rem;
-  padding-top: 1rem;
+  margin-bottom: 1rem;
+  padding-top: 0.75rem !important; /* Pequeño espacio para evitar recortes */
+}
+
+.usage-header h1.usage-title {
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 700;
+  background: linear-gradient(to right, white, rgba(255, 255, 255, 0.6));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  margin: 0 !important;
+  line-height: 1.25 !important;
+  padding-top: 0 !important;
+}
+
+@media (min-width: 768px) {
+  .usage-header h1.usage-title {
+    font-size: 1.875rem; /* text-3xl */
+  }
 }
 
 .header-subtitle {
@@ -244,6 +262,8 @@ const getBarWidth = (value) => {
   justify-content: space-between;
   align-items: flex-end;
   margin-top: 0.5rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding-bottom: 1rem;
 }
 
 .last-sync {
@@ -254,9 +274,9 @@ const getBarWidth = (value) => {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 1rem;
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 }
 
 .glass {
@@ -316,7 +336,8 @@ const getBarWidth = (value) => {
 .today-stats {
   display: flex;
   align-items: center;
-  gap: 3rem;
+  gap: 4rem;
+  flex-wrap: wrap;
 }
 
 .today-main {
@@ -403,9 +424,15 @@ const getBarWidth = (value) => {
 .history-item {
   display: flex;
   align-items: center;
-  padding: 1.25rem 0.75rem;
+  padding: 1.5rem 1rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  gap: 1.5rem;
+  gap: 2rem;
+  transition: background 0.2s ease;
+  border-radius: 8px;
+}
+
+.history-item:hover {
+  background: rgba(255, 255, 255, 0.03);
 }
 
 .history-item:last-child {
@@ -494,10 +521,37 @@ const getBarWidth = (value) => {
   line-height: 1.4;
 }
 
+@media (max-width: 1024px) {
+  .usage-container {
+    padding: 0 0.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .usage-container {
+    padding: 0 0.5rem;
+  }
+  
+  .today-stats {
+    gap: 2rem;
+  }
+}
+
 @media (max-width: 640px) {
+  .header-subtitle {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+
   .history-item {
     flex-wrap: wrap;
     gap: 0.75rem;
+    padding: 1.25rem 0.5rem;
   }
   
   .item-bars {

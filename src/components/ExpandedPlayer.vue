@@ -216,7 +216,10 @@ const handleTouchEnd = () => {
                 :alt="playerStore.currentTrack.title"
                 class="album-art"
               />
-              <div class="art-glow"></div>
+              <div 
+                class="art-glow"
+                :style="{ backgroundImage: `url('${playerStore.currentTrack?.thumbnail || ''}')` }"
+              ></div>
             </div>
           </div>
 
@@ -449,35 +452,38 @@ const handleTouchEnd = () => {
 
 .album-art-frame {
   position: relative;
-  width: min(95vw, 480px); /* Aumentado para compensar el cambio de 1:1 a 16:9 */
+  width: min(95vw, 550px);
   aspect-ratio: 16 / 9;
-  max-height: 50vh;
   margin: 0 auto;
+  border-radius: 12px;
+  overflow: hidden;
+  background-color: #000;
 }
 
 .album-art {
   width: 100%;
   height: 100%;
-  border-radius: 12px;
-  object-fit: contain; /* Cambiado a contain para asegurar que NADA se corte */
-  background: rgba(255, 255, 255, 0.03); /* Fondo sutil para el área si la imagen no llena */
+  object-fit: cover;
+  display: block;
   position: relative;
   z-index: 2;
   box-shadow: 
-    0 20px 60px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.08);
+    0 10px 40px rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 
 .art-glow {
-  inset: -10px;
-  border-radius: 20px;
-  background: inherit;
-  background-image: inherit;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   background-size: cover;
   background-position: center;
-  filter: blur(40px) brightness(1.1);
-  opacity: 0.3;
+  filter: blur(40px) brightness(1.2);
+  opacity: 0.4;
   z-index: 1;
+  border-radius: inherit;
 }
 
 .track-info-area {
@@ -694,7 +700,7 @@ const handleTouchEnd = () => {
 @media (max-height: 600px) {
   .album-art-frame {
     width: min(90vw, 400px);
-    max-height: 40vh;
+    aspect-ratio: 16 / 9;
   }
   
   .track-title {

@@ -93,7 +93,7 @@ onMounted(loadLastSearch)
 
 <template>
   <header class="app-header">
-    <div class="header-top">
+    <div class="header-content-wrapper">
       <div class="header-left">
         <button
           @click="toggleSidebar"
@@ -106,35 +106,29 @@ onMounted(loadLastSearch)
         <router-link to="/" class="logo">LiveMusic</router-link>
       </div>
 
-      <div class="header-right">
-        <router-link to="/library" class="library-link">
-          Tu biblioteca
-        </router-link>
-      </div>
-    </div>
+      <div class="header-center">
+        <div class="search-wrapper" :class="{ 'is-focused': isFocused }">
+          <Search class="search-icon" :size="18" />
 
-    <div class="header-center">
-      <div class="search-wrapper" :class="{ 'is-focused': isFocused }">
-        <Search class="search-icon" :size="18" />
+          <input
+            v-model="searchQuery"
+            class="search-input"
+            placeholder="Buscar..."
+            @keyup.enter="handleSearch"
+            @focus="handleFocus"
+            @blur="handleBlur"
+          />
 
-        <input
-          v-model="searchQuery"
-          class="search-input"
-          placeholder="Buscar música..."
-          @keyup.enter="handleSearch"
-          @focus="handleFocus"
-          @blur="handleBlur"
-        />
-
-        <button
-          v-if="searchQuery"
-          class="clear-btn"
-          @click="clearSearch"
-          @mousedown.prevent
-          aria-label="Limpiar búsqueda"
-        >
-          <X :size="16" />
-        </button>
+          <button
+            v-if="searchQuery"
+            class="clear-btn"
+            @click="clearSearch"
+            @mousedown.prevent
+            aria-label="Limpiar búsqueda"
+          >
+            <X :size="16" />
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -146,9 +140,8 @@ onMounted(loadLastSearch)
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  padding: calc(env(safe-area-inset-top, 0px) + 0.5rem) 1rem 0.75rem;
+  align-items: center;
+  padding: calc(env(safe-area-inset-top, 0px) + 0.25rem) 1rem 0.25rem;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -156,12 +149,16 @@ onMounted(loadLastSearch)
   height: auto;
 }
 
-.header-top {
+.header-content-wrapper {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  height: 44px;
   width: 100%;
+  gap: 1rem;
+}
+
+.header-top {
+  display: none;
 }
 
 .header-left {
@@ -246,13 +243,13 @@ onMounted(loadLastSearch)
 }
 
 .search-input {
-  padding: 10px 40px 10px 42px;
+  padding: 8px 40px 8px 42px;
   border-radius: 24px;
   border: none;
   outline: none;
   background: transparent;
   color: white;
-  font-size: 16px;
+  font-size: 15px;
   width: 100%;
   font-family: inherit;
 }
@@ -281,34 +278,7 @@ onMounted(loadLastSearch)
   background: rgba(255, 255, 255, 0.1);
 }
 
-.header-right {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  min-width: 0;
-}
 
-.library-link {
-  color: white;
-  text-decoration: none;
-  font-size: 0.9rem;
-  font-weight: 500;
-  opacity: 0.8;
-  transition: opacity 0.2s;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.library-link:hover {
-  opacity: 1;
-}
-
-.library-link.router-link-active {
-  opacity: 1;
-  color: #ff2d55;
-  font-weight: 600;
-}
 
 @media (max-width: 767px) {
   .app-header {
@@ -321,20 +291,20 @@ onMounted(loadLastSearch)
     margin-top: 0.25rem;
   }
 
+  .logo {
+    display: none;
+  }
+
   .search-wrapper {
     max-width: 100%;
     height: 40px;
     background: rgba(255, 255, 255, 0.08);
   }
-
-  .header-right {
-    display: none;
-  }
 }
 
 @media (min-width: 768px) {
   .app-header {
-    height: 72px;
+    height: 60px; /* Reducido de 72px a 60px */
     flex-direction: row;
     justify-content: space-between;
     padding: 0 2rem;
@@ -351,24 +321,23 @@ onMounted(loadLastSearch)
   }
 
   .logo {
-    font-size: 1.4rem;
+    font-size: 1.3rem; /* Ligeramente más pequeño */
   }
 
   .search-wrapper {
     max-width: 360px;
+    height: 38px; /* Altura más compacta */
   }
 
   .search-input {
-    font-size: 0.95rem;
-  }
-
-  .library-link {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
+    padding: 8px 40px 8px 42px;
   }
 }
 
 @media (min-width: 1024px) {
   .app-header {
+    height: 60px;
     grid-template-columns: 220px 1fr 180px;
     padding: 0 2rem;
   }
@@ -379,12 +348,13 @@ onMounted(loadLastSearch)
 }
 @media (min-width: 1280px) {
   .app-header {
+    height: 60px;
     grid-template-columns: 240px 1fr 200px;
     padding: 0 2.5rem;
   }
 
   .logo {
-    font-size: 1.5rem;
+    font-size: 1.4rem;
   }
 
   .search-wrapper {
@@ -392,11 +362,11 @@ onMounted(loadLastSearch)
   }
 
   .search-input {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 
   .library-link {
-    font-size: 1rem;
+    font-size: 0.95rem;
   }
 }
 

@@ -89,7 +89,7 @@ watch(() => playerStore.currentTrack, (track) => {
   overflow-y: auto;
   overflow-x: hidden;
   -webkit-overflow-scrolling: touch;
-  padding: 0.75rem;
+  padding: 0; /* Espacio superior eliminado */
   background: linear-gradient(to bottom, #121212, #0f0f0f);
   padding-bottom: 110px;
 }
@@ -103,14 +103,14 @@ watch(() => playerStore.currentTrack, (track) => {
 
 @media (min-width: 320px) and (max-width: 479px) {
   .content-area {
-    padding: 0.5rem 0.75rem;
+    padding: 0 0.75rem;
     padding-bottom: 100px;
   }
 }
 
 @media (min-width: 480px) and (max-width: 767px) {
   .content-area {
-    padding: 0.75rem 1rem;
+    padding: 0 1rem;
     padding-bottom: 105px;
   }
 }
@@ -121,7 +121,7 @@ watch(() => playerStore.currentTrack, (track) => {
   }
 
   .content-area {
-    padding: 1rem 1.25rem;
+    padding: 0 1.25rem;
     padding-bottom: 110px;
   }
 
@@ -134,7 +134,7 @@ watch(() => playerStore.currentTrack, (track) => {
   }
 
   .content-area {
-    padding: 1.25rem 1.5rem;
+    padding: 0 1.5rem;
     padding-bottom: 110px;
   }
 
@@ -147,7 +147,7 @@ watch(() => playerStore.currentTrack, (track) => {
   }
 
   .content-area {
-    padding: 1.5rem 2rem;
+    padding: 0 2rem;
     padding-bottom: 110px;
   }
 
@@ -160,7 +160,7 @@ watch(() => playerStore.currentTrack, (track) => {
   }
 
   .content-area {
-    padding: 2rem 3rem;
+    padding: 0 3rem;
     padding-bottom: 120px;
   }
 

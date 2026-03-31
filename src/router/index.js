@@ -23,11 +23,6 @@ const routes = [
     component: () => import('@/views/Favorites.vue')
   },
   {
-    path: '/playlists',
-    name: 'playlists',
-    component: () => import('@/views/Playlists.vue')
-  },
-  {
     path: '/:pathMatch(.*)*',
     name: 'not-found',
     component: () => import('@/views/NotFound.vue')

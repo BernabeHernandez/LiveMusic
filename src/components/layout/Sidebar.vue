@@ -1,5 +1,5 @@
 <script setup>
-import { X, DownloadCloud, LogOut, Home, Heart, ListMusic, Activity } from 'lucide-vue-next'
+import { X, DownloadCloud, LogOut, Home, Heart, Activity } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 
 const authStore = useAuthStore()
@@ -44,10 +44,6 @@ const closeSidebar = () => {
       <router-link to="/favorites" class="nav-item" @click="closeSidebar">
         <Heart :size="20" class="mr-3" />
         <span>Favoritos</span>
-      </router-link>
-      <router-link to="/playlists" class="nav-item" @click="closeSidebar">
-        <ListMusic :size="20" class="mr-3" />
-        <span>Playlists</span>
       </router-link>
       <router-link to="/downloads" class="nav-item" @click="closeSidebar">
         <DownloadCloud :size="20" class="mr-3" />
@@ -119,7 +115,7 @@ const closeSidebar = () => {
 .logout-btn {
   width: 100%;
   text-align: left;
-  background: rgba(255, 45, 85, 0.1);
+  background: transparent;
   border: none;
   cursor: pointer;
   font-family: inherit;
@@ -131,7 +127,7 @@ const closeSidebar = () => {
 }
 
 .logout-btn:hover {
-  background: rgba(255, 59, 48, 0.2);
+  background: rgba(255, 59, 48, 0.1);
   transform: translateY(-1px);
 }
 

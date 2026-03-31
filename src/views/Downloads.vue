@@ -1,14 +1,10 @@
 <template>
   <div class="search-container">
     <div class="search-header">
-      <div>
-        <h1 class="text-3xl md:text-4xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-white/60 mb-2">
-          Mis Descargas
-        </h1>
-        <p class="text-[var(--live-text-secondary)] flex items-center gap-2">
-          <HardDriveDownload class="w-4 h-4" />
-          {{ downloadsStore.downloadedTracks.length }} canciones disponibles offline
-        </p>
+      <div class="header-left">
+        <h2 class="downloads-title">
+          Mis descargas
+        </h2>
       </div>
       
       <button 
@@ -16,7 +12,7 @@
         @click="playAll"
         class="play-all-btn"
       >
-        <Play :size="24" fill="currentColor" />
+        <Play :size="20" fill="currentColor" class="play-icon-inner" />
       </button>
     </div>
 
@@ -130,9 +126,8 @@ const formatDuration = (seconds) => {
 
 <style scoped>
 .search-container {
-  padding: 0.75rem;
-  padding-bottom: 140px;
-  min-height: 100vh;
+  padding: 0 1rem;
+  padding-bottom: 2rem;
   color: white;
   width: 100%;
   max-width: 100%;
@@ -141,16 +136,49 @@ const formatDuration = (seconds) => {
 
 .search-header {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  margin-bottom: 2.5rem;
-  padding-top: 1rem;
+  margin-bottom: 0;
+  padding-top: 0;
+}
+
+.downloads-title {
+  font-size: 1.5rem; /* text-2xl */
+  font-weight: 700;
+  background: linear-gradient(to right, white, rgba(255, 255, 255, 0.6));
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  margin: 0 !important;
+  line-height: 1.25 !important;
+}
+
+@media (min-width: 768px) {
+  .downloads-title {
+    font-size: 2.25rem; /* Consistent with Favorites header size */
+  }
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .header-left {
+    flex-direction: row;
+    align-items: baseline;
+    gap: 0.75rem;
+  }
 }
 
 .play-all-btn {
-  width: 56px;
-  height: 56px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background: #ff2d55;
   color: white;
@@ -161,6 +189,25 @@ const formatDuration = (seconds) => {
   justify-content: center;
   box-shadow: 0 8px 20px rgba(255, 45, 85, 0.3);
   transition: all 0.3s ease;
+  flex-shrink: 0;
+  margin-top: 0;
+}
+
+@media (max-width: 768px) {
+  .search-header {
+    margin-bottom: 0.25rem;
+    padding-top: 0;
+  }
+  
+  .play-all-btn {
+    width: 42px;
+    height: 42px;
+    margin-top: 5px;
+  }
+}
+
+.play-icon-inner {
+  margin-left: 2px;
 }
 
 .play-all-btn:hover {
@@ -383,7 +430,7 @@ const formatDuration = (seconds) => {
 @media (max-width: 374px) {
   .search-container {
     padding: 0.5rem;
-    padding-bottom: 130px;
+    padding-bottom: 2rem;
   }
   
   .thumbnail {
@@ -400,8 +447,10 @@ const formatDuration = (seconds) => {
 
 @media (max-width: 767px) {
   .search-header {
-    flex-direction: column;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1rem;
   }
 }
 

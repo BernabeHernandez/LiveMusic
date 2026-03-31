@@ -406,10 +406,13 @@ onUnmounted(() => {
 <template>
   <div class="search-container">
     <div class="search-header" v-if="query">
-      <Search :size="24" class="search-icon" />
-      <h2>Resultados para "{{ query }}"</h2>
-      <div class="search-stats" v-if="results.length || albums.length">
-        <span class="stats-text" v-if="results.length">{{ results.length }} de {{ totalAvailable || '?' }} canciones</span>
+      <div class="header-left-search flex flex-col md:flex-row md:items-baseline md:gap-3">
+        <h2 class="text-xl md:text-2xl font-bold m-0 leading-tight">Resultados para "{{ query }}"</h2>
+        <div class="search-stats m-0 leading-tight" v-if="results.length || albums.length">
+          <span class="stats-text" v-if="results.length">{{ results.length }} de {{ totalAvailable || '?' }} canciones</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2 mt-1 md:mt-0">
         <span v-if="isExpanded" class="stats-badge">Expansión completa</span>
         <span v-else-if="expansionInProgress" class="stats-badge expanding">Buscando más...</span>
       </div>
@@ -575,7 +578,7 @@ onUnmounted(() => {
 
 <style scoped>
 .search-container {
-  padding: 0.75rem;
+  padding: 0 0.75rem;
   padding-bottom: 140px;
   min-height: 100vh;
   color: white;
@@ -586,10 +589,11 @@ onUnmounted(() => {
 
 .search-header {
   display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
-  padding: 0.25rem 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.25rem;
+  padding-top: 0;
 }
 
 /* Albums Section Styles */
