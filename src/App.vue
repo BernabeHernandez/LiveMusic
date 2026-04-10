@@ -66,7 +66,6 @@ watch(() => playerStore.currentTrack, (track) => {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;
   position: relative;
-  padding-bottom: env(safe-area-inset-bottom, 0px);
 }
 
 .main-container {
@@ -169,7 +168,7 @@ watch(() => playerStore.currentTrack, (track) => {
 
 @supports (-webkit-touch-callout: none) {
   .app-layout {
-    min-height: 100dvh;
+    height: 100dvh;
   }
 }
 

@@ -438,7 +438,7 @@ const handleTouchEnd = () => {
   padding: 0 16px;
   min-height: 0;
   overflow: hidden;
-  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+  padding-bottom: env(safe-area-inset-bottom, 16px);
 }
 
 .album-art-area {
