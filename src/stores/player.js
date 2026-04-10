@@ -781,10 +781,6 @@ export const usePlayerStore = defineStore('player', {
         document.head.appendChild(metaThemeColor);
       }
       metaThemeColor.setAttribute('content', color);
-      
-      // Update body and HTML background to match player color for iOS home indicator
-      document.body.style.backgroundColor = color;
-      document.documentElement.style.backgroundColor = color;
     },
 
     setIsExpanded(value) {
