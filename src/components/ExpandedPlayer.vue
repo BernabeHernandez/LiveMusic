@@ -330,7 +330,8 @@ const handleTouchEnd = () => {
   display: flex;
   flex-direction: column;
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  height: 100dvh;
   transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   margin: 0;
   padding: 0;

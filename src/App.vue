@@ -12,7 +12,10 @@
         @close="closeSidebar"
       />
 
-      <main class="content-area" :class="{ 'auth-view': !authStore.isAuthenticated() }">
+      <main class="content-area" :class="{ 
+        'auth-view': !authStore.isAuthenticated(),
+        'has-player': playerStore.currentTrack
+      }">
         <router-view />
       </main>
     </div>
@@ -90,7 +93,11 @@ watch(() => playerStore.currentTrack, (track) => {
   -webkit-overflow-scrolling: touch;
   padding: 0; /* Espacio superior eliminado */
   background: linear-gradient(to bottom, #121212, #0f0f0f);
-  padding-bottom: 110px;
+  padding-bottom: 0; /* Sin padding por defecto */
+}
+
+.content-area.has-player {
+  padding-bottom: 80px; /* Solo cuando hay reproductor */
 }
 
 .content-area.auth-view {
@@ -103,14 +110,20 @@ watch(() => playerStore.currentTrack, (track) => {
 @media (min-width: 320px) and (max-width: 479px) {
   .content-area {
     padding: 0 0.75rem;
-    padding-bottom: 100px;
+    padding-bottom: 0;
+  }
+  .content-area.has-player {
+    padding-bottom: 80px;
   }
 }
 
 @media (min-width: 480px) and (max-width: 767px) {
   .content-area {
     padding: 0 1rem;
-    padding-bottom: 105px;
+    padding-bottom: 0;
+  }
+  .content-area.has-player {
+    padding-bottom: 85px;
   }
 }
 
@@ -121,7 +134,10 @@ watch(() => playerStore.currentTrack, (track) => {
 
   .content-area {
     padding: 0 1.25rem;
-    padding-bottom: 110px;
+    padding-bottom: 0;
+  }
+  .content-area.has-player {
+    padding-bottom: 90px;
   }
 
 
@@ -134,7 +150,10 @@ watch(() => playerStore.currentTrack, (track) => {
 
   .content-area {
     padding: 0 1.5rem;
-    padding-bottom: 110px;
+    padding-bottom: 0;
+  }
+  .content-area.has-player {
+    padding-bottom: 90px;
   }
 
 
@@ -147,7 +166,10 @@ watch(() => playerStore.currentTrack, (track) => {
 
   .content-area {
     padding: 0 2rem;
-    padding-bottom: 110px;
+    padding-bottom: 0;
+  }
+  .content-area.has-player {
+    padding-bottom: 90px;
   }
 
 
@@ -160,7 +182,10 @@ watch(() => playerStore.currentTrack, (track) => {
 
   .content-area {
     padding: 0 3rem;
-    padding-bottom: 120px;
+    padding-bottom: 0;
+  }
+  .content-area.has-player {
+    padding-bottom: 100px;
   }
 
 
