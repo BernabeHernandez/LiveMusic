@@ -61,7 +61,7 @@ watch(() => playerStore.currentTrack, (track) => {
   height: 100dvh;
   display: flex;
   flex-direction: column;
-  background: #121212;
+  background: #000000;
   color: white;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   overflow: hidden;

@@ -235,13 +235,13 @@ const formatTime = (seconds) => {
   left: 0;
   right: 0;
   width: 100%;
-  height: 85px; 
+  height: 75px; 
   background: var(--bar-bg-color, #111);
   color: white;
   display: flex;
   align-items: center;
   padding: 0 16px;
-  padding-bottom: env(safe-area-inset-bottom, 12px);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   border-top: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.5);
   z-index: 3000;

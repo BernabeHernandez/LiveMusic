@@ -13,7 +13,7 @@ body,
   height: 100%;
   min-height: 100vh;
   min-height: 100dvh;
-  background: #121212;
+  background: #000000; /* Negro puro para evitar la línea inferior */
   overflow: hidden; /* Prevent body scroll */
 }
 ::-webkit-scrollbar {
