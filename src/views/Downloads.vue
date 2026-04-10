@@ -16,6 +16,20 @@
       </button>
     </div>
 
+    <!-- Filtros -->
+    <div v-if="downloadsStore.downloadedTracks.length > 0" class="filters-container">
+      <div class="sort-filter">
+        <Filter :size="18" class="filter-icon" />
+        <select v-model="sortBy" class="sort-select">
+          <option value="newest">Más recientes</option>
+          <option value="oldest">Más antiguas</option>
+          <option value="az">Título (A-Z)</option>
+          <option value="za">Título (Z-A)</option>
+          <option value="artist">Artista</option>
+        </select>
+      </div>
+    </div>
+
     <!-- Empty State -->
     <div v-if="downloadsStore.downloadedTracks.length === 0" 
          class="flex flex-col items-center justify-center text-center p-8 bg-white/5 rounded-2xl border border-white/5 mt-8">
@@ -34,7 +48,7 @@
     <!-- Lista de Descargas responsive como SearchSongs -->
     <div v-else class="results-grid">
       <div
-        v-for="(item, index) in downloadsStore.downloadedTracks"
+        v-for="(item, index) in filteredAndSortedTracks"
         :key="item.videoId"
         class="song-card"
         :class="{ 'is-playing': playerStore.currentTrack?.videoId === item.videoId }"
@@ -88,25 +102,51 @@
 </template>
 
 <script setup>
-import { onMounted } from 'vue';
-import { DownloadCloud, Play, Pause, Trash2, HardDriveDownload, Music } from 'lucide-vue-next';
+import { onMounted, ref, computed } from 'vue';
+import { DownloadCloud, Play, Pause, Trash2, HardDriveDownload, Music, Search, Filter } from 'lucide-vue-next';
 import { useDownloadsStore } from '@/stores/downloads';
 import { usePlayerStore } from '@/stores/player';
 
 const downloadsStore = useDownloadsStore();
 const playerStore = usePlayerStore();
 
+const sortBy = ref('newest'); // 'newest', 'oldest', 'az', 'za', 'artist'
+
 onMounted(async () => {
   await downloadsStore.loadDownloads();
 });
 
+const filteredAndSortedTracks = computed(() => {
+  let tracks = [...downloadsStore.downloadedTracks];
+
+  // Ordenamiento
+  tracks.sort((a, b) => {
+    switch (sortBy.value) {
+      case 'newest':
+        return new Date(b.downloadedAt || 0) - new Date(a.downloadedAt || 0);
+      case 'oldest':
+        return new Date(a.downloadedAt || 0) - new Date(b.downloadedAt || 0);
+      case 'az':
+        return a.title.localeCompare(b.title);
+      case 'za':
+        return b.title.localeCompare(a.title);
+      case 'artist':
+        return (a.artist || '').localeCompare(b.artist || '');
+      default:
+        return 0;
+    }
+  });
+
+  return tracks;
+});
+
 const playTrack = (index) => {
-  playerStore.setQueue([...downloadsStore.downloadedTracks], index);
+  playerStore.setQueue([...filteredAndSortedTracks.value], index);
 };
 
 const playAll = () => {
-  if (downloadsStore.downloadedTracks.length > 0) {
-    playerStore.setQueue([...downloadsStore.downloadedTracks], 0);
+  if (filteredAndSortedTracks.value.length > 0) {
+    playerStore.setQueue([...filteredAndSortedTracks.value], 0);
   }
 };
 
@@ -228,6 +268,73 @@ const formatDuration = (seconds) => {
 .cta-button:hover {
   background: #ff375f;
   transform: translateY(-2px);
+}
+
+.filters-container {
+  display: flex;
+  justify-content: flex-end;
+  margin: 1rem 0;
+  width: 100%;
+}
+
+.sort-filter {
+  position: relative;
+  min-width: 160px;
+}
+
+.filter-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.4);
+  pointer-events: none;
+}
+
+.sort-select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 12px;
+  padding: 10px 12px 10px 40px;
+  color: white;
+  font-size: 0.95rem;
+  font-weight: 500;
+  appearance: none;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.sort-select:focus {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 45, 85, 0.6);
+  box-shadow: 0 0 0 3px rgba(255, 45, 85, 0.15);
+}
+
+.sort-select option {
+  background-color: #1a1a1a;
+  color: white;
+  padding: 12px;
+}
+
+.sort-filter::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 10px;
+  height: 6px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6' fill='none'%3E%3Cpath d='M1 1L5 5L9 1' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.sort-filter:hover::after {
+  opacity: 1;
 }
 
 .results-grid {
