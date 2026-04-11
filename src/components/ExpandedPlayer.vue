@@ -323,13 +323,16 @@ const handleTouchEnd = () => {
 <style scoped>
 .expanded-player {
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: calc(100vh + env(safe-area-inset-bottom, 0px));
+  padding-bottom: env(safe-area-inset-bottom, 0px);
   background-color: var(--bg-color, #000);
   z-index: 9999;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  width: 100%;
   transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1);
   margin: 0;
   padding: 0;

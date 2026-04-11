@@ -61,7 +61,6 @@ watch(() => playerStore.currentTrack, (track) => {
 <style scoped>
 .app-layout {
   height: 100vh;
-  height: 100dvh;
   display: flex;
   flex-direction: column;
   background: #000000;
@@ -193,7 +192,7 @@ watch(() => playerStore.currentTrack, (track) => {
 
 @supports (-webkit-touch-callout: none) {
   .app-layout {
-    height: 100dvh;
+    height: 100vh;
   }
 }
 
